@@ -22,10 +22,10 @@ export const SCORE = {
  */
 export const CARD_CONFIG = {
   WRONG_ANSWERS_COUNT: 5,        // Cantidad de respuestas incorrectas
-  MAX_CARDS_ON_SCREEN: 6,        // Número máximo de tarjetas visibles simultáneamente
-  SPAWN_INTERVAL: 2000,          // Intervalo de spawn en ms (configurable para dificultad)
-  MIN_SPEED: 50,                 // Velocidad mínima de movimiento (px/s)
-  MAX_SPEED: 150,                // Velocidad máxima de movimiento (px/s)
+  MAX_CARDS_ON_SCREEN: 20,        // Número máximo de tarjetas visibles simultáneamente
+  SPAWN_INTERVAL: 500,          // Intervalo de spawn en ms (configurable para dificultad)
+  MIN_SPEED: 100,                 // Velocidad mínima de movimiento (px/s)
+  MAX_SPEED: 300,                // Velocidad máxima de movimiento (px/s)
   CARD_WIDTH: 120,               // Ancho de la tarjeta
   CARD_HEIGHT: 80,               // Alto de la tarjeta
   CARD_PADDING: 20               // Espaciado interno de la tarjeta
@@ -37,5 +37,17 @@ export const CARD_CONFIG = {
 export const UI_CONFIG = {
   QUESTION_DISPLAY_Y: 50,
   QUESTION_FONT_SIZE: '42px',
-  QUESTION_COLOR: '#ffffff'
+  QUESTION_COLOR: '#ffffff',
+  SCORE_DISPLAY_X: 100,
+  SCORE_DISPLAY_Y: 50,
+  SCORE_FONT_SIZE: '28px',
+  TIMER_DISPLAY_Y: 120,
+  TIMER_FONT_SIZE: '32px'
+};
+
+/**
+ * Configuración del juego
+ */
+export const GAME_CONFIG = {
+  QUESTION_DURATION: 30000  // Duración de cada pregunta en ms (20 segundos)
 };

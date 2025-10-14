@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { CARD_CONFIG } from '../utils/constants';
+import { CardExplosion } from '../effects/CardExplosion';
 
 /**
  * Tarjeta con un número que se mueve por la pantalla
@@ -50,9 +51,17 @@ export class Card extends Phaser.GameObjects.Container {
     // Profundidad para que esté debajo de la mira
     this.setDepth(50);
 
-    // Hacer la tarjeta interactiva para detectar clicks
+    // Hacer la tarjeta interactiva con área de hit explícita
     this.setSize(CARD_CONFIG.CARD_WIDTH, CARD_CONFIG.CARD_HEIGHT);
-    this.setInteractive();
+    this.setInteractive(
+      new Phaser.Geom.Rectangle(
+        -CARD_CONFIG.CARD_WIDTH / 2,
+        -CARD_CONFIG.CARD_HEIGHT / 2,
+        CARD_CONFIG.CARD_WIDTH,
+        CARD_CONFIG.CARD_HEIGHT
+      ),
+      Phaser.Geom.Rectangle.Contains
+    );
   }
 
   /**
@@ -125,56 +134,21 @@ export class Card extends Phaser.GameObjects.Container {
    * Efecto visual cuando la tarjeta es golpeada correctamente
    */
   public showHitCorrectEffect(): void {
-    // Flash verde y desaparecer
-    this.scene.tweens.add({
-      targets: this.background,
-      alpha: 0,
-      duration: 200,
-      ease: 'Power2'
-    });
+    // Crear explosión en 4 partes
+    CardExplosion.create(this.scene, this.x, this.y, true);
 
-    this.scene.tweens.add({
-      targets: this.numberText,
-      scaleX: 1.5,
-      scaleY: 1.5,
-      alpha: 0,
-      duration: 200,
-      ease: 'Back.easeIn',
-      onComplete: () => {
-        this.destroy();
-      }
-    });
+    // Destruir la tarjeta inmediatamente
+    this.destroy();
   }
 
   /**
    * Efecto visual cuando la tarjeta es golpeada incorrectamente
    */
   public showHitWrongEffect(): void {
-    // Flash rojo y shake
-    const originalColor = 0x2c3e50;
+    // Crear explosión roja
+    CardExplosion.create(this.scene, this.x, this.y, false);
 
-    this.background.clear();
-    this.background.fillStyle(0xff0000, 1);
-    this.background.fillRoundedRect(
-      -CARD_CONFIG.CARD_WIDTH / 2,
-      -CARD_CONFIG.CARD_HEIGHT / 2,
-      CARD_CONFIG.CARD_WIDTH,
-      CARD_CONFIG.CARD_HEIGHT,
-      10
-    );
-
-    this.scene.time.delayedCall(100, () => {
-      if (this.background && this.background.active) {
-        this.background.clear();
-        this.background.fillStyle(originalColor, 1);
-        this.background.fillRoundedRect(
-          -CARD_CONFIG.CARD_WIDTH / 2,
-          -CARD_CONFIG.CARD_HEIGHT / 2,
-          CARD_CONFIG.CARD_WIDTH,
-          CARD_CONFIG.CARD_HEIGHT,
-          10
-        );
-      }
-    });
+    // Destruir la tarjeta inmediatamente
+    this.destroy();
   }
 }
