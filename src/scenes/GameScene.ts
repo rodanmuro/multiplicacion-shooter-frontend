@@ -1,9 +1,14 @@
 import Phaser from 'phaser';
 import { Crosshair } from '../entities/Crosshair';
 import { ShotMarker } from '../entities/ShotMarker';
+import { QuestionGenerator } from '../systems/QuestionGenerator';
+import { QuestionDisplay } from '../components/QuestionDisplay';
+import { Difficulty } from '../types';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
+  private questionGenerator!: QuestionGenerator;
+  private questionDisplay!: QuestionDisplay;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -30,6 +35,13 @@ export class GameScene extends Phaser.Scene {
     // Crear la mira
     this.crosshair = new Crosshair(this);
 
+    // Inicializar sistema de preguntas
+    this.questionGenerator = new QuestionGenerator(Difficulty.MEDIUM);
+    this.questionDisplay = new QuestionDisplay(this);
+
+    // Generar primera pregunta
+    this.generateNewQuestion();
+
     // Configurar evento de click para disparar
     this.input.on('pointerdown', this.onShoot, this);
   }
@@ -46,5 +58,11 @@ export class GameScene extends Phaser.Scene {
 
     // Animación de feedback en la mira
     this.crosshair.pulse();
+  }
+
+  private generateNewQuestion(): void {
+    const question = this.questionGenerator.generateQuestion();
+    this.questionDisplay.setQuestion(question);
+    console.log(`Nueva pregunta: ${question.factor1} × ${question.factor2} = ${question.correctAnswer}`);
   }
 }
