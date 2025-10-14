@@ -22,13 +22,16 @@ export const SCORE = {
  */
 export const CARD_CONFIG = {
   WRONG_ANSWERS_COUNT: 5,        // Cantidad de respuestas incorrectas
-  MAX_CARDS_ON_SCREEN: 20,        // Número máximo de tarjetas visibles simultáneamente
-  SPAWN_INTERVAL: 500,          // Intervalo de spawn en ms (configurable para dificultad)
-  MIN_SPEED: 100,                 // Velocidad mínima de movimiento (px/s)
+  MAX_CARDS_ON_SCREEN: 20,       // Número máximo de tarjetas visibles simultáneamente
+  SPAWN_INTERVAL: 500,           // Intervalo de spawn en ms (configurable para dificultad)
+  MIN_SPEED: 100,                // Velocidad mínima de movimiento (px/s)
   MAX_SPEED: 300,                // Velocidad máxima de movimiento (px/s)
   CARD_WIDTH: 120,               // Ancho de la tarjeta
   CARD_HEIGHT: 80,               // Alto de la tarjeta
-  CARD_PADDING: 20               // Espaciado interno de la tarjeta
+  CARD_PADDING: 20,              // Espaciado interno de la tarjeta
+  CORRECT_CARD_PROBABILITY: 0.4  // Probabilidad de spawn de tarjeta correcta (0.0 - 1.0)
+                                 // 0.4 = 40% correctas, 60% incorrectas
+                                 // Ajustar según dificultad deseada
 };
 
 /**

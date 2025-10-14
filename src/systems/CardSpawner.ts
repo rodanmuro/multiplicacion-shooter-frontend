@@ -7,12 +7,7 @@ import { generateWrongAnswers, shuffleArray, randomInt } from '../utils/mathHelp
 /**
  * Bordes desde donde pueden aparecer las tarjetas
  */
-enum SpawnEdge {
-  TOP = 'top',
-  BOTTOM = 'bottom',
-  LEFT = 'left',
-  RIGHT = 'right'
-}
+type SpawnEdge = 'top' | 'bottom' | 'left' | 'right';
 
 /**
  * Sistema encargado de generar y gestionar tarjetas
@@ -87,12 +82,31 @@ export class CardSpawner {
       return;
     }
 
-    // Seleccionar un número aleatorio del pool
-    const value = this.availableAnswers[
-      randomInt(0, this.availableAnswers.length - 1)
-    ];
+    // Decidir si la tarjeta será correcta o incorrecta según probabilidad
+    const shouldBeCorrect = Math.random() < CARD_CONFIG.CORRECT_CARD_PROBABILITY;
 
-    const isCorrect = value === this.currentQuestion.correctAnswer;
+    let value: number;
+    let isCorrect: boolean;
+
+    if (shouldBeCorrect) {
+      // Spawn tarjeta correcta
+      value = this.currentQuestion.correctAnswer;
+      isCorrect = true;
+    } else {
+      // Spawn tarjeta incorrecta - elegir del pool de respuestas incorrectas
+      const wrongAnswers = this.availableAnswers.filter(
+        answer => answer !== this.currentQuestion!.correctAnswer
+      );
+
+      if (wrongAnswers.length > 0) {
+        value = wrongAnswers[randomInt(0, wrongAnswers.length - 1)];
+        isCorrect = false;
+      } else {
+        // Fallback: si no hay incorrectas, usar correcta
+        value = this.currentQuestion.correctAnswer;
+        isCorrect = true;
+      }
+    }
 
     // Seleccionar borde aleatorio
     const edge = this.getRandomEdge();
@@ -116,12 +130,7 @@ export class CardSpawner {
    * Obtiene un borde aleatorio
    */
   private getRandomEdge(): SpawnEdge {
-    const edges = [
-      SpawnEdge.TOP,
-      SpawnEdge.BOTTOM,
-      SpawnEdge.LEFT,
-      SpawnEdge.RIGHT
-    ];
+    const edges: SpawnEdge[] = ['top', 'bottom', 'left', 'right'];
     return edges[randomInt(0, edges.length - 1)];
   }
 
@@ -138,7 +147,7 @@ export class CardSpawner {
     const margin = 50;
 
     switch (edge) {
-      case SpawnEdge.TOP:
+      case 'top':
         return {
           x: randomInt(margin, this.worldWidth - margin),
           y: -margin,
@@ -146,7 +155,7 @@ export class CardSpawner {
           velocityY: speed
         };
 
-      case SpawnEdge.BOTTOM:
+      case 'bottom':
         return {
           x: randomInt(margin, this.worldWidth - margin),
           y: this.worldHeight + margin,
@@ -154,7 +163,7 @@ export class CardSpawner {
           velocityY: -speed
         };
 
-      case SpawnEdge.LEFT:
+      case 'left':
         return {
           x: -margin,
           y: randomInt(margin, this.worldHeight - margin),
@@ -162,7 +171,7 @@ export class CardSpawner {
           velocityY: randomInt(-50, 50)
         };
 
-      case SpawnEdge.RIGHT:
+      case 'right':
         return {
           x: this.worldWidth + margin,
           y: randomInt(margin, this.worldHeight - margin),
@@ -195,8 +204,17 @@ export class CardSpawner {
    */
   public checkHit(x: number, y: number): Card | null {
     for (const card of this.cards) {
-      const bounds = card.getBounds();
-      if (bounds.contains(x, y)) {
+      // Calcular área de colisión manual basada en el tamaño de la tarjeta
+      const halfWidth = CARD_CONFIG.CARD_WIDTH / 2;
+      const halfHeight = CARD_CONFIG.CARD_HEIGHT / 2;
+
+      const left = card.x - halfWidth;
+      const right = card.x + halfWidth;
+      const top = card.y - halfHeight;
+      const bottom = card.y + halfHeight;
+
+      // Verificar si el punto está dentro del área rectangular
+      if (x >= left && x <= right && y >= top && y <= bottom) {
         return card;
       }
     }
