@@ -9,6 +9,17 @@ export class CardExplosion {
    * Crea una explosión de tarjeta en 4 fragmentos
    */
   static create(scene: Phaser.Scene, x: number, y: number, isCorrect: boolean): void {
+    // Reproducir sonidos según tipo de acierto
+    if (isCorrect) {
+      // Sonido de power-up para respuesta correcta
+      scene.sound.play('correct', { volume: 0.6 });
+    } else {
+      // Sonido de power-down para respuesta incorrecta
+      scene.sound.play('wrong', { volume: 0.5 });
+    }
+    // Sonido de explosión siempre
+    scene.sound.play('explosion', { volume: 0.3 });
+
     const halfWidth = CARD_CONFIG.CARD_WIDTH / 2;
     const halfHeight = CARD_CONFIG.CARD_HEIGHT / 2;
     const fragmentSize = Math.min(halfWidth, halfHeight);

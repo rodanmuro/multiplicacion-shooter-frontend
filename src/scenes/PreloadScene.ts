@@ -9,10 +9,28 @@ export class PreloadScene extends Phaser.Scene {
     // Cargar sonidos del juego
     console.log('PreloadScene: Loading assets...');
 
-    // Cargar sonido de disparo en múltiples formatos
+    // Cargar sonido de disparo
     this.load.audio('shoot', [
       'sounds/shoot.ogg',
       'sounds/shoot.mp3'
+    ]);
+
+    // Cargar sonido de explosión
+    this.load.audio('explosion', [
+      'sounds/explosion.ogg',
+      'sounds/explosion.mp3'
+    ]);
+
+    // Cargar sonido de acierto correcto
+    this.load.audio('correct', [
+      'sounds/correct.ogg',
+      'sounds/correct.mp3'
+    ]);
+
+    // Cargar sonido de acierto incorrecto
+    this.load.audio('wrong', [
+      'sounds/wrong.ogg',
+      'sounds/wrong.mp3'
     ]);
   }
 
