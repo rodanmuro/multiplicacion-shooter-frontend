@@ -20,11 +20,26 @@ export class CardSpawner {
   private availableAnswers: number[] = [];
   private worldWidth: number;
   private worldHeight: number;
+  private speedMultiplier: number = 1.0;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     this.worldWidth = scene.cameras.main.width;
     this.worldHeight = scene.cameras.main.height;
+  }
+
+  /**
+   * Configura el multiplicador de velocidad
+   */
+  public setSpeedMultiplier(multiplier: number): void {
+    this.speedMultiplier = multiplier;
+  }
+
+  /**
+   * Obtiene el multiplicador de velocidad actual
+   */
+  public getSpeedMultiplier(): number {
+    return this.speedMultiplier;
   }
 
   /**
@@ -143,7 +158,9 @@ export class CardSpawner {
     velocityX: number;
     velocityY: number;
   } {
-    const speed = randomInt(CARD_CONFIG.MIN_SPEED, CARD_CONFIG.MAX_SPEED);
+    // Aplicar multiplicador de velocidad según nivel
+    const baseSpeed = randomInt(CARD_CONFIG.MIN_SPEED, CARD_CONFIG.MAX_SPEED);
+    const speed = baseSpeed * this.speedMultiplier;
     const margin = 50;
 
     switch (edge) {

@@ -8,6 +8,7 @@ import { randomInt } from '../utils/mathHelpers';
  */
 export class QuestionGenerator {
   private difficulty: Difficulty;
+  private specificTable: number | null = null;
 
   constructor(difficulty: Difficulty = Difficulty.MEDIUM) {
     this.difficulty = difficulty;
@@ -17,10 +18,20 @@ export class QuestionGenerator {
    * Genera una nueva pregunta de multiplicación
    */
   public generateQuestion(): Question {
-    const config = DIFFICULTY_CONFIG[this.difficulty];
+    let factor1: number;
+    let factor2: number;
 
-    const factor1 = randomInt(config.minFactor, config.maxFactor);
-    const factor2 = randomInt(config.minFactor, config.maxFactor);
+    // Si hay una tabla específica configurada, uno de los factores será ese número
+    if (this.specificTable !== null) {
+      factor1 = this.specificTable;
+      factor2 = randomInt(1, 10);  // El otro factor siempre entre 1 y 10
+    } else {
+      // Modo tradicional basado en dificultad
+      const config = DIFFICULTY_CONFIG[this.difficulty];
+      factor1 = randomInt(config.minFactor, config.maxFactor);
+      factor2 = randomInt(config.minFactor, config.maxFactor);
+    }
+
     const correctAnswer = factor1 * factor2;
 
     return {
@@ -28,6 +39,21 @@ export class QuestionGenerator {
       factor2,
       correctAnswer
     };
+  }
+
+  /**
+   * Configura una tabla específica de multiplicar
+   * @param table Número de la tabla (ej: 7 para la tabla del 7), o null para modo normal
+   */
+  public setSpecificTable(table: number | null): void {
+    this.specificTable = table;
+  }
+
+  /**
+   * Obtiene la tabla específica configurada
+   */
+  public getSpecificTable(): number | null {
+    return this.specificTable;
   }
 
   /**

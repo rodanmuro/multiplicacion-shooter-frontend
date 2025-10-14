@@ -52,5 +52,28 @@ export const UI_CONFIG = {
  * Configuración del juego
  */
 export const GAME_CONFIG = {
-  QUESTION_DURATION: 30000  // Duración de cada pregunta en ms (20 segundos)
+  SESSION_DURATION: 300000   // Duración total de la sesión en ms (5 minutos)
+};
+
+/**
+ * Sistema de progresión de dificultad
+ * Orden recomendado para aprendizaje de tablas de multiplicar
+ */
+export const PROGRESSION_CONFIG = {
+  // Orden de tablas: fáciles (1, 10, 2, 5) → intermedias (3, 4) → difíciles (6, 7, 8, 9)
+  TABLE_ORDER: [1, 10, 2, 5, 3, 4, 6, 7, 8, 9],
+
+  // Tablas difíciles para rotar después del nivel 10
+  HARD_TABLES: [6, 7, 8, 9],
+
+  // Puntos necesarios para cada nivel (cada nivel = siguiente tabla)
+  POINTS_PER_LEVEL: 40,      // Con +10 por correcta, necesitas 4 aciertos por nivel
+
+  // Escala de velocidad según nivel
+  SPEED_SCALE: {
+    MIN_MULTIPLIER: 1.0,     // Velocidad inicial (nivel 1)
+    MAX_MULTIPLIER: 2.0,     // Velocidad máxima (nivel 10)
+    INCREMENT: 0.11,         // Incremento por nivel (~10% más rápido cada nivel)
+    MAX_LEVEL_FOR_INCREMENT: 10  // Después del nivel 10, la velocidad se mantiene
+  }
 };

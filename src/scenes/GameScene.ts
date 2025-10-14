@@ -6,8 +6,9 @@ import { QuestionDisplay } from '../components/QuestionDisplay';
 import { CardSpawner } from '../systems/CardSpawner';
 import { ScoreManager } from '../systems/ScoreManager';
 import { ScoreDisplay } from '../components/ScoreDisplay';
-import { QuestionTimer } from '../components/QuestionTimer';
 import { AudioManager } from '../managers/AudioManager';
+import { ProgressionManager } from '../managers/ProgressionManager';
+import { SessionTimer } from '../components/SessionTimer';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 
@@ -18,9 +19,11 @@ export class GameScene extends Phaser.Scene {
   private cardSpawner!: CardSpawner;
   private scoreManager!: ScoreManager;
   private scoreDisplay!: ScoreDisplay;
-  private questionTimer!: QuestionTimer;
   private audioManager!: AudioManager;
-  private questionTimeoutEvent!: Phaser.Time.TimerEvent;
+  private progressionManager!: ProgressionManager;
+  private sessionTimer!: Phaser.Time.TimerEvent;
+  private sessionTimerDisplay!: SessionTimer;
+  private sessionEnded: boolean = false;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -58,16 +61,37 @@ export class GameScene extends Phaser.Scene {
     this.scoreManager = new ScoreManager();
     this.scoreDisplay = new ScoreDisplay(this);
 
-    // Inicializar temporizador de pregunta
-    this.questionTimer = new QuestionTimer(this);
-
     // Inicializar gestor de audio
     this.audioManager = new AudioManager(this);
     this.audioManager.registerSound('shoot');
 
-    // Conectar cambios de puntuación con la UI
+    // Inicializar gestor de progresión
+    this.progressionManager = new ProgressionManager();
+
+    // Inicializar display de timer de sesión
+    this.sessionTimerDisplay = new SessionTimer(this, GAME_CONFIG.SESSION_DURATION);
+
+    // Configurar timer de sesión (5 minutos)
+    this.sessionTimer = this.time.delayedCall(
+      GAME_CONFIG.SESSION_DURATION,
+      this.endSession,
+      [],
+      this
+    );
+
+    // Conectar cambios de puntuación con la UI y progresión
     this.scoreManager.setOnScoreChange((score, delta) => {
       this.scoreDisplay.updateScore(score, delta);
+
+      // Actualizar progresión basada en puntaje
+      const previousLevel = this.progressionManager.getCurrentLevel();
+      this.progressionManager.updateProgress(score);
+      const currentLevel = this.progressionManager.getCurrentLevel();
+
+      // Si subió de nivel, actualizar velocidad y tabla
+      if (currentLevel > previousLevel) {
+        this.onLevelUp(currentLevel);
+      }
     });
 
     // Generar primera pregunta
@@ -85,8 +109,15 @@ export class GameScene extends Phaser.Scene {
     // Actualizar movimiento de tarjetas
     this.cardSpawner.update(delta);
 
-    // Actualizar temporizador de pregunta
-    this.questionTimer.update(delta);
+    // Actualizar display de tiempo restante
+    const remainingTime = this.progressionManager.getRemainingTime();
+    this.sessionTimerDisplay.update(remainingTime);
+
+    // Verificar si la sesión ha terminado (solo una vez)
+    if (!this.sessionEnded && this.progressionManager.isSessionComplete()) {
+      this.sessionEnded = true;
+      this.endSession();
+    }
   }
 
   private onShoot(pointer: Phaser.Input.Pointer): void {
@@ -121,75 +152,270 @@ export class GameScene extends Phaser.Scene {
   }
 
   private generateNewQuestion(): void {
+    // Verificar si la sesión ha terminado
+    if (this.progressionManager.isSessionComplete()) {
+      this.endSession();
+      return;
+    }
+
+    // Actualizar tabla de multiplicar según nivel actual
+    const currentTable = this.progressionManager.getCurrentTable();
+    this.questionGenerator.setSpecificTable(currentTable);
+
     const question = this.questionGenerator.generateQuestion();
     this.questionDisplay.setQuestion(question);
+
+    // Actualizar velocidad de tarjetas según nivel
+    const speedMultiplier = this.progressionManager.getSpeedMultiplier();
+    this.cardSpawner.setSpeedMultiplier(speedMultiplier);
 
     // Iniciar spawn de tarjetas con la nueva pregunta
     this.cardSpawner.startSpawning(question);
 
-    // Iniciar temporizador visual
-    this.questionTimer.start();
-
+    // Log de información de progreso
+    const info = this.progressionManager.getProgressInfo();
+    const remainingMinutes = Math.floor(info.remainingTime / 60000);
+    const remainingSeconds = Math.floor((info.remainingTime % 60000) / 1000);
     console.log(`Nueva pregunta: ${question.factor1} × ${question.factor2} = ${question.correctAnswer}`);
-
-    // Cancelar timer anterior si existe
-    if (this.questionTimeoutEvent) {
-      this.questionTimeoutEvent.remove();
-    }
-
-    // Configurar timer para cambiar pregunta automáticamente
-    this.questionTimeoutEvent = this.time.delayedCall(
-      GAME_CONFIG.QUESTION_DURATION,
-      this.onQuestionTimeout,
-      [],
-      this
-    );
+    console.log(`Nivel: ${info.level} | Tabla del ${info.table} | Tiempo restante: ${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')} | Velocidad: ${info.speedMultiplier.toFixed(2)}x`);
   }
 
-  private onQuestionTimeout(): void {
-    // Detener temporizador visual
-    this.questionTimer.stop();
+  private onLevelUp(newLevel: number): void {
+    const currentTable = this.progressionManager.getCurrentTable();
 
-    // Mostrar notificación de cambio de pregunta
-    this.showQuestionChangeNotification();
+    console.log(`¡SUBIDA DE NIVEL! Nivel ${newLevel} - Tabla del ${currentTable}`);
 
-    // Generar nueva pregunta después de un breve delay
-    this.time.delayedCall(1000, () => {
-      this.generateNewQuestion();
-    });
-  }
-
-  private showQuestionChangeNotification(): void {
-    // Crear texto de notificación
+    // Crear notificación de subida de nivel
     const notification = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      '¡Nueva Pregunta!',
+      this.cameras.main.centerY - 100,
+      `¡NIVEL ${newLevel}!\nTabla del ${currentTable}`,
       {
-        fontSize: '48px',
-        color: '#ffff00',
+        fontSize: '56px',
+        color: '#00ff00',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 6
+        strokeThickness: 8,
+        align: 'center'
       }
     );
     notification.setOrigin(0.5);
-    notification.setDepth(1500);
+    notification.setDepth(2000);
     notification.setAlpha(0);
 
     // Animación de entrada y salida
     this.tweens.add({
       targets: notification,
       alpha: 1,
-      scaleX: 1.2,
-      scaleY: 1.2,
-      duration: 300,
-      ease: 'Back.easeOut',
+      scaleX: 1.3,
+      scaleY: 1.3,
+      duration: 400,
+      ease: 'Elastic.easeOut',
       yoyo: true,
-      hold: 400,
+      hold: 800,
       onComplete: () => {
         notification.destroy();
       }
+    });
+
+    // Generar nueva pregunta con la nueva tabla
+    this.time.delayedCall(1200, () => {
+      // Generar nueva pregunta con la tabla del nuevo nivel
+      this.generateNewQuestion();
+    });
+  }
+
+  private endSession(): void {
+    // Detener spawn de tarjetas
+    this.cardSpawner.stopSpawning();
+
+    // Cancelar timer de sesión
+    if (this.sessionTimer) {
+      this.sessionTimer.remove();
+    }
+
+    console.log('¡SESIÓN COMPLETADA!');
+
+    // Mostrar pantalla de resumen
+    this.showSessionSummary();
+  }
+
+  private showSessionSummary(): void {
+    const info = this.progressionManager.getProgressInfo();
+    const finalScore = this.scoreManager.getScore();
+
+    // Crear overlay oscuro
+    const overlay = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0x000000,
+      0.8
+    );
+    overlay.setDepth(3000);
+
+    // Crear texto de resumen
+    const summaryText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 150,
+      '¡SESIÓN COMPLETADA!',
+      {
+        fontSize: '64px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 8
+      }
+    );
+    summaryText.setOrigin(0.5);
+    summaryText.setDepth(3001);
+
+    const elapsedMinutes = Math.floor(info.elapsedTime / 60000);
+    const elapsedSeconds = Math.floor((info.elapsedTime % 60000) / 1000);
+
+    const statsText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      `Puntuación Final: ${finalScore}\n` +
+      `Nivel Alcanzado: ${info.level}\n` +
+      `Última Tabla: Tabla del ${info.table}\n` +
+      `Tiempo Jugado: ${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`,
+      {
+        fontSize: '32px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        align: 'center',
+        lineSpacing: 10
+      }
+    );
+    statsText.setOrigin(0.5);
+    statsText.setDepth(3001);
+
+    const restartText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY + 150,
+      'Haz clic para nueva sesión',
+      {
+        fontSize: '28px',
+        color: '#00ff00',
+        fontStyle: 'italic'
+      }
+    );
+    restartText.setOrigin(0.5);
+    restartText.setDepth(3001);
+
+    // Animación de parpadeo en texto de reinicio
+    this.tweens.add({
+      targets: restartText,
+      alpha: 0.3,
+      duration: 800,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    // Reiniciar al hacer clic (con confirmación)
+    this.input.once('pointerdown', () => {
+      this.showRestartConfirmation(overlay, summaryText, statsText, restartText);
+    });
+  }
+
+  private showRestartConfirmation(
+    overlay: Phaser.GameObjects.Rectangle,
+    summaryText: Phaser.GameObjects.Text,
+    statsText: Phaser.GameObjects.Text,
+    restartText: Phaser.GameObjects.Text
+  ): void {
+    // Ocultar elementos anteriores
+    summaryText.destroy();
+    statsText.destroy();
+    restartText.destroy();
+
+    // Crear texto de confirmación
+    const confirmText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 60,
+      '¿Seguro que deseas iniciar\nuna nueva sesión?',
+      {
+        fontSize: '48px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 6,
+        align: 'center'
+      }
+    );
+    confirmText.setOrigin(0.5);
+    confirmText.setDepth(3001);
+
+    // Botón SÍ
+    const yesButton = this.add.text(
+      this.cameras.main.centerX - 100,
+      this.cameras.main.centerY + 80,
+      'SÍ',
+      {
+        fontSize: '42px',
+        color: '#00ff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+        backgroundColor: '#004400',
+        padding: { x: 30, y: 15 }
+      }
+    );
+    yesButton.setOrigin(0.5);
+    yesButton.setDepth(3001);
+    yesButton.setInteractive({ useHandCursor: true });
+
+    // Botón NO
+    const noButton = this.add.text(
+      this.cameras.main.centerX + 100,
+      this.cameras.main.centerY + 80,
+      'NO',
+      {
+        fontSize: '42px',
+        color: '#ff0000',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+        backgroundColor: '#440000',
+        padding: { x: 30, y: 15 }
+      }
+    );
+    noButton.setOrigin(0.5);
+    noButton.setDepth(3001);
+    noButton.setInteractive({ useHandCursor: true });
+
+    // Hover effect en botón SÍ
+    yesButton.on('pointerover', () => {
+      yesButton.setScale(1.1);
+    });
+    yesButton.on('pointerout', () => {
+      yesButton.setScale(1);
+    });
+
+    // Hover effect en botón NO
+    noButton.on('pointerover', () => {
+      noButton.setScale(1.1);
+    });
+    noButton.on('pointerout', () => {
+      noButton.setScale(1);
+    });
+
+    // Click en SÍ - reiniciar
+    yesButton.on('pointerdown', () => {
+      this.scene.restart();
+    });
+
+    // Click en NO - volver al resumen
+    noButton.on('pointerdown', () => {
+      confirmText.destroy();
+      yesButton.destroy();
+      noButton.destroy();
+
+      // Recrear pantalla de resumen
+      this.showSessionSummary();
     });
   }
 }
