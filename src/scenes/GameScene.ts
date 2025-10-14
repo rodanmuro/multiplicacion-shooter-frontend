@@ -3,12 +3,14 @@ import { Crosshair } from '../entities/Crosshair';
 import { ShotMarker } from '../entities/ShotMarker';
 import { QuestionGenerator } from '../systems/QuestionGenerator';
 import { QuestionDisplay } from '../components/QuestionDisplay';
+import { CardSpawner } from '../systems/CardSpawner';
 import { Difficulty } from '../types';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
   private questionGenerator!: QuestionGenerator;
   private questionDisplay!: QuestionDisplay;
+  private cardSpawner!: CardSpawner;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -39,6 +41,9 @@ export class GameScene extends Phaser.Scene {
     this.questionGenerator = new QuestionGenerator(Difficulty.MEDIUM);
     this.questionDisplay = new QuestionDisplay(this);
 
+    // Inicializar sistema de tarjetas
+    this.cardSpawner = new CardSpawner(this);
+
     // Generar primera pregunta
     this.generateNewQuestion();
 
@@ -46,10 +51,13 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointerdown', this.onShoot, this);
   }
 
-  update(): void {
+  update(_time: number, delta: number): void {
     // Actualizar posición de la mira siguiendo el mouse
     const pointer = this.input.activePointer;
     this.crosshair.updatePosition(pointer.x, pointer.y);
+
+    // Actualizar movimiento de tarjetas
+    this.cardSpawner.update(delta);
   }
 
   private onShoot(pointer: Phaser.Input.Pointer): void {
@@ -63,6 +71,10 @@ export class GameScene extends Phaser.Scene {
   private generateNewQuestion(): void {
     const question = this.questionGenerator.generateQuestion();
     this.questionDisplay.setQuestion(question);
+
+    // Iniciar spawn de tarjetas con la nueva pregunta
+    this.cardSpawner.startSpawning(question);
+
     console.log(`Nueva pregunta: ${question.factor1} × ${question.factor2} = ${question.correctAnswer}`);
   }
 }
