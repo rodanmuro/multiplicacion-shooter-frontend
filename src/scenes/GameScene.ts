@@ -7,6 +7,7 @@ import { CardSpawner } from '../systems/CardSpawner';
 import { ScoreManager } from '../systems/ScoreManager';
 import { ScoreDisplay } from '../components/ScoreDisplay';
 import { QuestionTimer } from '../components/QuestionTimer';
+import { AudioManager } from '../managers/AudioManager';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 
@@ -18,6 +19,7 @@ export class GameScene extends Phaser.Scene {
   private scoreManager!: ScoreManager;
   private scoreDisplay!: ScoreDisplay;
   private questionTimer!: QuestionTimer;
+  private audioManager!: AudioManager;
   private questionTimeoutEvent!: Phaser.Time.TimerEvent;
 
   constructor() {
@@ -59,6 +61,10 @@ export class GameScene extends Phaser.Scene {
     // Inicializar temporizador de pregunta
     this.questionTimer = new QuestionTimer(this);
 
+    // Inicializar gestor de audio
+    this.audioManager = new AudioManager(this);
+    this.audioManager.registerSound('shoot');
+
     // Conectar cambios de puntuación con la UI
     this.scoreManager.setOnScoreChange((score, delta) => {
       this.scoreDisplay.updateScore(score, delta);
@@ -84,6 +90,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onShoot(pointer: Phaser.Input.Pointer): void {
+    // Reproducir sonido de disparo
+    this.audioManager.play('shoot', { volume: 0.5 });
+
     // Crear marcador de disparo en la posición actual del mouse
     new ShotMarker(this, pointer.x, pointer.y);
 
