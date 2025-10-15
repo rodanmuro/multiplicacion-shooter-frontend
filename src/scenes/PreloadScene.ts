@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { AuthManager } from '../managers/AuthManager';
 
 export class PreloadScene extends Phaser.Scene {
   constructor() {
@@ -35,8 +36,22 @@ export class PreloadScene extends Phaser.Scene {
   }
 
   create(): void {
-    console.log('PreloadScene: Assets loaded, starting game...');
-    // Transición automática a la escena del juego
-    this.scene.start('GameScene');
+    console.log('PreloadScene: Assets loaded');
+
+    // Verificar si el usuario está autenticado
+    const authManager = AuthManager.getInstance();
+    const isAuthenticated = authManager.isAuthenticated();
+
+    if (isAuthenticated) {
+      const user = authManager.getUser();
+      console.log('Usuario autenticado:', user?.name);
+      console.log('Iniciando juego directamente...');
+      // Si está autenticado, ir directo al juego
+      this.scene.start('GameScene');
+    } else {
+      console.log('Usuario no autenticado, mostrando pantalla de login...');
+      // Si no está autenticado, mostrar pantalla de login
+      this.scene.start('LoginScene');
+    }
   }
 }

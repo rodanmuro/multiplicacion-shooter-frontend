@@ -8,7 +8,9 @@ import { ScoreManager } from '../systems/ScoreManager';
 import { ScoreDisplay } from '../components/ScoreDisplay';
 import { AudioManager } from '../managers/AudioManager';
 import { ProgressionManager } from '../managers/ProgressionManager';
+import { AuthManager } from '../managers/AuthManager';
 import { SessionTimer } from '../components/SessionTimer';
+import { UserDisplay } from '../components/UserDisplay';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 
@@ -23,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   private progressionManager!: ProgressionManager;
   private sessionTimer!: Phaser.Time.TimerEvent;
   private sessionTimerDisplay!: SessionTimer;
+  private userDisplay!: UserDisplay;
   private sessionEnded: boolean = false;
 
   constructor() {
@@ -70,6 +73,13 @@ export class GameScene extends Phaser.Scene {
 
     // Inicializar display de timer de sesión
     this.sessionTimerDisplay = new SessionTimer(this, GAME_CONFIG.SESSION_DURATION);
+
+    // Mostrar información del usuario autenticado
+    const authManager = AuthManager.getInstance();
+    const user = authManager.getUser();
+    if (user) {
+      this.userDisplay = new UserDisplay(this, user);
+    }
 
     // Configurar timer de sesión (5 minutos)
     this.sessionTimer = this.time.delayedCall(
