@@ -10,7 +10,7 @@ import { AudioManager } from '../managers/AudioManager';
 import { ProgressionManager } from '../managers/ProgressionManager';
 import { AuthManager } from '../managers/AuthManager';
 import { SessionTimer } from '../components/SessionTimer';
-import { UserDisplay } from '../components/UserDisplay';
+import { UserMenu } from '../ui/UserMenu';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 
@@ -25,7 +25,7 @@ export class GameScene extends Phaser.Scene {
   private progressionManager!: ProgressionManager;
   private sessionTimer!: Phaser.Time.TimerEvent;
   private sessionTimerDisplay!: SessionTimer;
-  private userDisplay!: UserDisplay;
+  private userMenu!: UserMenu;
   private sessionEnded: boolean = false;
 
   constructor() {
@@ -74,11 +74,12 @@ export class GameScene extends Phaser.Scene {
     // Inicializar display de timer de sesión
     this.sessionTimerDisplay = new SessionTimer(this, GAME_CONFIG.SESSION_DURATION);
 
-    // Mostrar información del usuario autenticado
+    // Mostrar información del usuario autenticado en HTML (fuera del canvas)
     const authManager = AuthManager.getInstance();
     const user = authManager.getUser();
     if (user) {
-      this.userDisplay = new UserDisplay(this, user);
+      this.userMenu = new UserMenu();
+      this.userMenu.show(user);
     }
 
     // Configurar timer de sesión (5 minutos)

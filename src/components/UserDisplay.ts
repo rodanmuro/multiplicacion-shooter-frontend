@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import type { GoogleUser } from '../types/auth';
+import { AuthManager } from '../managers/AuthManager';
 
 /**
  * Muestra la información del usuario autenticado en la esquina superior derecha
@@ -11,6 +12,7 @@ export class UserDisplay {
   private avatarText: Phaser.GameObjects.Text | null = null;
   private nameText: Phaser.GameObjects.Text;
   private avatarImage: Phaser.GameObjects.Image | null = null;
+  private logoutButton: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, user: GoogleUser) {
     this.scene = scene;
@@ -51,8 +53,32 @@ export class UserDisplay {
     });
     this.nameText.setOrigin(1, 0.5);
 
+    // Crear botón de logout
+    this.logoutButton = this.scene.add.text(-60, 55, 'Salir', {
+      fontSize: '14px',
+      color: '#ffffff',
+      backgroundColor: '#ff4444',
+      padding: { x: 8, y: 4 }
+    });
+    this.logoutButton.setOrigin(1, 0.5);
+    this.logoutButton.setInteractive({ useHandCursor: true });
+
+    // Efectos hover en el botón
+    this.logoutButton.on('pointerover', () => {
+      this.logoutButton.setStyle({ backgroundColor: '#ff6666' });
+    });
+
+    this.logoutButton.on('pointerout', () => {
+      this.logoutButton.setStyle({ backgroundColor: '#ff4444' });
+    });
+
+    // Acción de logout
+    this.logoutButton.on('pointerdown', () => {
+      this.handleLogout();
+    });
+
     // Agregar elementos al contenedor
-    this.container.add([this.avatarCircle, this.nameText]);
+    this.container.add([this.avatarCircle, this.nameText, this.logoutButton]);
 
     // Animación de entrada
     this.container.setAlpha(0);
@@ -64,6 +90,21 @@ export class UserDisplay {
     });
 
     console.log('UserDisplay creado para:', firstName);
+  }
+
+  /**
+   * Maneja el logout del usuario
+   */
+  private handleLogout(): void {
+    const authManager = AuthManager.getInstance();
+
+    // Cerrar sesión
+    authManager.logout();
+
+    console.log('Cerrando sesión...');
+
+    // Volver a la escena de login
+    this.scene.scene.start('LoginScene');
   }
 
   /**
