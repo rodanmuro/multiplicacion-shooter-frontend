@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { AuthManager } from '../managers/AuthManager';
 import type { GoogleCredentialResponse } from '../types/auth';
+import { authApiService } from '../services/authApiService';
 
 /**
  * Escena de login con Google OAuth
@@ -210,37 +211,55 @@ export class LoginScene extends Phaser.Scene {
   /**
    * Callback cuando el usuario se autentica con Google
    */
-  private handleGoogleCallback(response: GoogleCredentialResponse): void {
+  private async handleGoogleCallback(response: GoogleCredentialResponse): Promise<void> {
     console.log('Google callback received');
 
-    const success = this.authManager.login(response.credential);
+    try {
+      // 1. Primero procesar con AuthManager (almacenamiento local)
+      const success = this.authManager.login(response.credential);
 
-    if (success) {
+      if (!success) {
+        throw new Error('Error al procesar login local');
+      }
+
+      // 2. Luego enviar al backend para registrar en BD
+      console.log('Enviando token al backend...');
+      const userData = await authApiService.verifyGoogleToken(response.credential);
+      console.log('✅ Usuario registrado en backend:', userData);
+
+      // 3. Guardar profile del usuario en localStorage
+      localStorage.setItem('user_profile', userData.profile);
+      console.log(`Perfil de usuario: ${userData.profile}`);
+
+      // 4. Obtener datos del usuario local
       const user = this.authManager.getUser();
-      console.log('Usuario autenticado:', user?.name);
 
-      // Mostrar mensaje de bienvenida
-      this.showWelcomeMessage(user?.name || 'Usuario');
+      // 5. Mostrar mensaje de bienvenida
+      this.showWelcomeMessage(user?.name || userData.name);
 
-      // Remover el botón de Google del DOM
+      // 6. Remover el botón de Google del DOM
       const buttonDiv = document.getElementById('google-signin-button');
       if (buttonDiv) {
         buttonDiv.remove();
       }
 
-      // Transición al juego después de 2 segundos
+      // 7. Transición al juego después de 2 segundos
       this.time.delayedCall(2000, () => {
         this.scene.start('GameScene');
       });
-    } else {
-      console.error('Error al procesar login');
+
+    } catch (error) {
+      console.error('❌ Error al verificar token con backend:', error);
+
+      // Mostrar mensaje de error
       const errorText = this.add.text(
         this.cameras.main.centerX,
         this.cameras.main.centerY + 200,
-        'Error al iniciar sesión. Intenta de nuevo.',
+        'Error al conectar con el servidor.\nIntenta de nuevo.',
         {
           fontSize: '20px',
-          color: '#ff0000'
+          color: '#ff0000',
+          align: 'center'
         }
       );
       errorText.setOrigin(0.5);
