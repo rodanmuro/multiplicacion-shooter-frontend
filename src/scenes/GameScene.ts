@@ -13,6 +13,7 @@ import { SessionTimer } from '../components/SessionTimer';
 import { UserMenu } from '../ui/UserMenu';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
+import { sessionApiService } from '../services/sessionApiService';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -27,6 +28,7 @@ export class GameScene extends Phaser.Scene {
   private sessionTimerDisplay!: SessionTimer;
   private userMenu!: UserMenu;
   private sessionEnded: boolean = false;
+  private sessionId: number | null = null; // ID de la sesión en el backend
 
   constructor() {
     super({ key: 'GameScene' });
@@ -34,6 +36,9 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     console.log('GameScene: Game started!');
+
+    // Crear sesión en el backend (sin bloquear la inicialización)
+    this.createGameSession();
 
     // Texto temporal para verificar que la escena funciona
     this.add.text(
@@ -234,6 +239,27 @@ export class GameScene extends Phaser.Scene {
       // Generar nueva pregunta con la tabla del nuevo nivel
       this.generateNewQuestion();
     });
+  }
+
+  /**
+   * Crear sesión de juego en el backend
+   */
+  private async createGameSession(): Promise<void> {
+    try {
+      const startedAt = new Date().toISOString();
+      console.log('Creando sesión de juego en backend...');
+
+      const session = await sessionApiService.createSession(startedAt);
+      this.sessionId = session.id;
+
+      console.log(`✅ Sesión de juego creada: ${this.sessionId}`);
+      console.log('Datos de la sesión:', session);
+
+    } catch (error) {
+      console.error('❌ Error al crear sesión en backend:', error);
+      console.warn('El juego continuará sin sincronización con backend');
+      // El juego continúa aunque falle la creación de la sesión
+    }
   }
 
   private endSession(): void {

@@ -245,6 +245,9 @@ export class LoginScene extends Phaser.Scene {
 
       // 7. Transición al juego después de 2 segundos
       this.time.delayedCall(2000, () => {
+        // Detener y limpiar LoginScene completamente
+        this.scene.stop('LoginScene');
+        // Iniciar GameScene
         this.scene.start('GameScene');
       });
 
