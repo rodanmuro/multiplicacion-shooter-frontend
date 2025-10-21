@@ -35,6 +35,8 @@ export interface GameSessionData {
   final_score: number;
   max_level_reached: number;
   duration_seconds: number;
+  canvas_width: number;
+  canvas_height: number;
   created_at: string;
   updated_at: string;
 }

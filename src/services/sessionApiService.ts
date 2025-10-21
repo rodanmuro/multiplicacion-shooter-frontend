@@ -11,10 +11,10 @@ export const sessionApiService = {
    * @param startedAt Timestamp ISO de inicio de la sesión
    * @returns Datos de la sesión creada
    */
-  async createSession(startedAt: string): Promise<GameSessionData> {
+  async createSession(startedAt: string, canvasWidth: number, canvasHeight: number): Promise<GameSessionData> {
     const response = await apiClient.post<ApiResponse<GameSessionData>>(
       '/sessions',
-      { started_at: startedAt }
+      { started_at: startedAt, canvas_width: Math.round(canvasWidth), canvas_height: Math.round(canvasHeight) }
     );
 
     return response.data.data;

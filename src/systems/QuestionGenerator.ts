@@ -9,6 +9,7 @@ import { randomInt } from '../utils/mathHelpers';
 export class QuestionGenerator {
   private difficulty: Difficulty;
   private specificTable: number | null = null;
+  private currentQuestion: Question | null = null;
 
   constructor(difficulty: Difficulty = Difficulty.MEDIUM) {
     this.difficulty = difficulty;
@@ -34,11 +35,13 @@ export class QuestionGenerator {
 
     const correctAnswer = factor1 * factor2;
 
-    return {
+    this.currentQuestion = {
       factor1,
       factor2,
       correctAnswer
     };
+
+    return this.currentQuestion;
   }
 
   /**
@@ -54,6 +57,13 @@ export class QuestionGenerator {
    */
   public getSpecificTable(): number | null {
     return this.specificTable;
+  }
+
+  /**
+   * Obtiene la pregunta actual generada
+   */
+  public getCurrentQuestion(): Question | null {
+    return this.currentQuestion;
   }
 
   /**

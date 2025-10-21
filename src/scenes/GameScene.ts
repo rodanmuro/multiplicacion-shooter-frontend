@@ -14,6 +14,8 @@ import { UserMenu } from '../ui/UserMenu';
 import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 import { sessionApiService } from '../services/sessionApiService';
+import { shotApiService } from '../services/shotApiService';
+import type { RecordShotPayload } from '../types/api';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -164,6 +166,44 @@ export class GameScene extends Phaser.Scene {
 
       // Remover la tarjeta del spawner (correcta o incorrecta)
       this.cardSpawner.removeCard(hitCard);
+
+      // Registrar disparo en backend de forma asíncrona (sin bloquear el juego)
+      this.recordShotToBackend(hitCard, pointer.x, pointer.y);
+    }
+  }
+
+  /**
+   * Envía el disparo al backend si hay sesión activa
+   */
+  private async recordShotToBackend(hitCard: any, x: number, y: number): Promise<void> {
+    try {
+      if (!this.sessionId) {
+        console.warn('No hay sessionId; no se registrará el disparo en backend');
+        return;
+      }
+
+      const question = this.questionGenerator.getCurrentQuestion();
+      if (!question) {
+        console.warn('No hay pregunta actual; no se registrará el disparo');
+        return;
+      }
+
+      const payload: RecordShotPayload = {
+        shot_at: new Date().toISOString(),
+        coordinate_x: x,
+        coordinate_y: y,
+        factor_1: question.factor1,
+        factor_2: question.factor2,
+        correct_answer: question.correctAnswer,
+        card_value: hitCard.getValue(),
+        is_correct: hitCard.isCorrect()
+      };
+
+      const result = await shotApiService.recordShot(this.sessionId, payload);
+      console.log('Disparo registrado en backend:', result);
+    } catch (error) {
+      console.error('Error registrando disparo en backend:', error);
+      // No interrumpir juego por errores de red/backend
     }
   }
 
@@ -248,8 +288,10 @@ export class GameScene extends Phaser.Scene {
     try {
       const startedAt = new Date().toISOString();
       console.log('Creando sesión de juego en backend...');
+      const canvasW = this.cameras.main.width;
+      const canvasH = this.cameras.main.height;
 
-      const session = await sessionApiService.createSession(startedAt);
+      const session = await sessionApiService.createSession(startedAt, canvasW, canvasH);
       this.sessionId = session.id;
 
       console.log(`✅ Sesión de juego creada: ${this.sessionId}`);
