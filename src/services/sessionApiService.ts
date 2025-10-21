@@ -3,7 +3,7 @@
  */
 
 import apiClient from './apiService';
-import type { ApiResponse, GameSessionData, FinishSessionPayload } from '../types/api';
+import type { ApiResponse, GameSessionData, FinishSessionPayload, FinishedSessionData } from '../types/api';
 
 export const sessionApiService = {
   /**
@@ -26,9 +26,9 @@ export const sessionApiService = {
    * @param payload Datos finales de la sesión
    * @returns Sesión actualizada
    */
-  async finishSession(sessionId: number, payload: FinishSessionPayload): Promise<GameSessionData> {
-    const response = await apiClient.patch<ApiResponse<GameSessionData>>(
-      `/sessions/${sessionId}`,
+  async finishSession(sessionId: number, payload: FinishSessionPayload): Promise<FinishedSessionData> {
+    const response = await apiClient.put<ApiResponse<FinishedSessionData>>(
+      `/sessions/${sessionId}/finish`,
       payload
     );
 

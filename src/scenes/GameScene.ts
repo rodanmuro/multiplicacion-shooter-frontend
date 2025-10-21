@@ -15,7 +15,7 @@ import { Difficulty } from '../types';
 import { GAME_CONFIG } from '../utils/constants';
 import { sessionApiService } from '../services/sessionApiService';
 import { shotApiService } from '../services/shotApiService';
-import type { RecordShotPayload } from '../types/api';
+import type { RecordShotPayload, FinishedSessionData } from '../types/api';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -31,6 +31,7 @@ export class GameScene extends Phaser.Scene {
   private userMenu!: UserMenu;
   private sessionEnded: boolean = false;
   private sessionId: number | null = null; // ID de la sesión en el backend
+  private lastFinishedSessionData: FinishedSessionData | null = null;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -139,6 +140,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private onShoot(pointer: Phaser.Input.Pointer): void {
+    if (this.sessionEnded) {
+      return;
+    }
     // Reproducir sonido de disparo
     this.audioManager.play('shoot', { volume: 0.5 });
 
@@ -304,7 +308,7 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private endSession(): void {
+  private async endSession(): Promise<void> {
     // Detener spawn de tarjetas
     this.cardSpawner.stopSpawning();
 
@@ -314,12 +318,41 @@ export class GameScene extends Phaser.Scene {
     }
 
     console.log('¡SESIÓN COMPLETADA!');
+    this.sessionEnded = true;
 
-    // Mostrar pantalla de resumen
+    // Intentar finalizar sesión en backend si existe sessionId
+    if (this.sessionId) {
+      try {
+        const info = this.progressionManager.getProgressInfo();
+        const finalScore = this.scoreManager.getScore();
+        const payload = {
+          finished_at: new Date().toISOString(),
+          final_score: finalScore,
+          max_level_reached: this.progressionManager.getCurrentLevel(),
+          duration_seconds: Math.floor(info.elapsedTime / 1000)
+        };
+
+        const finished = await sessionApiService.finishSession(this.sessionId, payload);
+        console.log('Sesión finalizada en backend:', finished);
+        this.lastFinishedSessionData = finished;
+      } catch (error) {
+        console.error('Error al finalizar sesión en backend:', error);
+      }
+    }
+
+    // Mostrar pantalla de resumen (prefiere datos del backend si existen)
     this.showSessionSummary();
   }
 
   private showSessionSummary(): void {
+    if (this.lastFinishedSessionData) {
+      this.showSessionSummaryBackend(this.lastFinishedSessionData);
+    } else {
+      this.showSessionSummaryLocal();
+    }
+  }
+
+  private showSessionSummaryLocal(): void {
     const info = this.progressionManager.getProgressInfo();
     const finalScore = this.scoreManager.getScore();
 
@@ -397,6 +430,83 @@ export class GameScene extends Phaser.Scene {
     // Reiniciar al hacer clic (con confirmación)
     this.input.once('pointerdown', () => {
       this.showRestartConfirmation(overlay, summaryText, statsText, restartText);
+    });
+  }
+
+  private showSessionSummaryBackend(session: FinishedSessionData): void {
+    // Crear overlay oscuro
+    const overlay = this.add.rectangle(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      this.cameras.main.width,
+      this.cameras.main.height,
+      0x000000,
+      0.8
+    );
+    overlay.setDepth(3000);
+
+    const title = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 150,
+      '¡SESIÓN COMPLETADA!',
+      {
+        fontSize: '64px',
+        color: '#ffff00',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 8
+      }
+    );
+    title.setOrigin(0.5);
+    title.setDepth(3001);
+
+    const minutes = Math.floor(session.duration_seconds / 60);
+    const seconds = session.duration_seconds % 60;
+
+    const stats = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY,
+      `Puntuación Final: ${session.final_score}\n` +
+      `Nivel Alcanzado: ${session.max_level_reached}\n` +
+      `Disparos Totales: ${session.total_shots}\n` +
+      `Aciertos: ${session.correct_shots} | Errores: ${session.wrong_shots}\n` +
+      `Precisión: ${session.accuracy}%\n` +
+      `Tiempo Jugado: ${minutes}:${seconds.toString().padStart(2, '0')}`,
+      {
+        fontSize: '32px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        align: 'center',
+        lineSpacing: 10
+      }
+    );
+    stats.setOrigin(0.5);
+    stats.setDepth(3001);
+
+    const restartText = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY + 150,
+      'Haz clic para nueva sesión',
+      {
+        fontSize: '28px',
+        color: '#00ff00',
+        fontStyle: 'italic'
+      }
+    );
+    restartText.setOrigin(0.5);
+    restartText.setDepth(3001);
+
+    this.tweens.add({
+      targets: restartText,
+      alpha: 0.3,
+      duration: 800,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1
+    });
+
+    this.input.once('pointerdown', () => {
+      this.showRestartConfirmation(overlay, title, stats, restartText);
     });
   }
 
