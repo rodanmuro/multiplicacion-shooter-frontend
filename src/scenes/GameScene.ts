@@ -87,6 +87,7 @@ export class GameScene extends Phaser.Scene {
     const user = authManager.getUser();
     if (user) {
       this.userMenu = new UserMenu();
+      this.userMenu.setGameInstance(this.game);
       this.userMenu.show(user);
     }
 
@@ -353,6 +354,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showSessionSummaryLocal(): void {
+    // Restaurar cursor normal
+    this.input.setDefaultCursor('default');
+
     const info = this.progressionManager.getProgressInfo();
     const finalScore = this.scoreManager.getScore();
 
@@ -434,6 +438,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showSessionSummaryBackend(session: FinishedSessionData): void {
+    // Restaurar cursor normal
+    this.input.setDefaultCursor('default');
+
     // Crear overlay oscuro
     const overlay = this.add.rectangle(
       this.cameras.main.centerX,

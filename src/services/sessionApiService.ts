@@ -3,7 +3,14 @@
  */
 
 import apiClient from './apiService';
-import type { ApiResponse, GameSessionData, FinishSessionPayload, FinishedSessionData } from '../types/api';
+import type {
+  ApiResponse,
+  GameSessionData,
+  FinishSessionPayload,
+  FinishedSessionData,
+  SessionsResponse,
+  SessionDetail
+} from '../types/api';
 
 export const sessionApiService = {
   /**
@@ -42,6 +49,32 @@ export const sessionApiService = {
    */
   async getSession(sessionId: number): Promise<GameSessionData> {
     const response = await apiClient.get<ApiResponse<GameSessionData>>(
+      `/sessions/${sessionId}`
+    );
+
+    return response.data.data;
+  },
+
+  /**
+   * Obtener listado de sesiones del usuario autenticado (paginado)
+   * @param page Número de página (por defecto 1)
+   * @returns Listado de sesiones con información de paginación
+   */
+  async getSessions(page: number = 1): Promise<SessionsResponse> {
+    const response = await apiClient.get<SessionsResponse>(
+      `/sessions?page=${page}`
+    );
+
+    return response.data;
+  },
+
+  /**
+   * Obtener detalle de una sesión específica con todos sus disparos
+   * @param sessionId ID de la sesión
+   * @returns Sesión con listado de disparos
+   */
+  async getSessionDetail(sessionId: number): Promise<SessionDetail> {
+    const response = await apiClient.get<ApiResponse<SessionDetail>>(
       `/sessions/${sessionId}`
     );
 

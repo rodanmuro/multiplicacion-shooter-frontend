@@ -94,18 +94,43 @@ export interface FinishSessionPayload {
 }
 
 /**
- * Item de la lista de sesiones
+ * Item de la lista de sesiones (con estadísticas calculadas)
  */
 export interface SessionListItem {
   id: number;
+  user_id: number;
   started_at: string;
-  finished_at: string;
+  finished_at: string | null;
   final_score: number;
   max_level_reached: number;
   duration_seconds: number;
+  canvas_width: number;
+  canvas_height: number;
   total_shots: number;
   correct_shots: number;
+  wrong_shots: number;
   accuracy: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Información de paginación
+ */
+export interface PaginationInfo {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+/**
+ * Respuesta paginada de sesiones
+ */
+export interface SessionsResponse {
+  success: boolean;
+  data: SessionListItem[];
+  pagination: PaginationInfo;
 }
 
 /**

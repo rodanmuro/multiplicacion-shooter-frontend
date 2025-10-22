@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { AuthManager } from '../managers/AuthManager';
 import type { GoogleUser } from '../types/auth';
 
@@ -7,27 +8,77 @@ import type { GoogleUser } from '../types/auth';
  */
 export class UserMenu {
   private userMenuElement: HTMLElement;
+  private menuToggle: HTMLElement;
+  private menuDropdown: HTMLElement;
   private userAvatarElement: HTMLImageElement;
   private userNameElement: HTMLElement;
+  private statsButton: HTMLButtonElement;
   private logoutButton: HTMLButtonElement;
   private authManager: AuthManager;
+  private gameInstance: Phaser.Game | null = null;
+  private isMenuOpen: boolean = false;
 
   constructor() {
     this.authManager = AuthManager.getInstance();
 
     // Obtener elementos del DOM
     this.userMenuElement = document.getElementById('user-menu') as HTMLElement;
+    this.menuToggle = document.getElementById('user-menu-toggle') as HTMLElement;
+    this.menuDropdown = document.getElementById('user-menu-dropdown') as HTMLElement;
     this.userAvatarElement = document.getElementById('user-avatar') as HTMLImageElement;
     this.userNameElement = document.getElementById('user-name') as HTMLElement;
+    this.statsButton = document.getElementById('stats-btn') as HTMLButtonElement;
     this.logoutButton = document.getElementById('logout-btn') as HTMLButtonElement;
 
-    if (!this.userMenuElement || !this.userAvatarElement || !this.userNameElement || !this.logoutButton) {
+    if (!this.userMenuElement || !this.menuToggle || !this.menuDropdown || !this.userAvatarElement || !this.userNameElement || !this.statsButton || !this.logoutButton) {
       console.error('User menu elements not found in DOM');
       return;
     }
 
-    // Configurar evento de logout
-    this.logoutButton.addEventListener('click', () => this.handleLogout());
+    // Configurar eventos
+    this.menuToggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleMenu();
+    });
+    this.statsButton.addEventListener('click', () => {
+      this.closeMenu();
+      this.handleStats();
+    });
+    this.logoutButton.addEventListener('click', () => {
+      this.closeMenu();
+      this.handleLogout();
+    });
+
+    // Cerrar menú al hacer click fuera
+    document.addEventListener('click', (e) => {
+      if (this.isMenuOpen && !this.userMenuElement.contains(e.target as Node)) {
+        this.closeMenu();
+      }
+    });
+  }
+
+  /**
+   * Alterna la visibilidad del menú desplegable
+   */
+  private toggleMenu(): void {
+    this.isMenuOpen = !this.isMenuOpen;
+
+    if (this.isMenuOpen) {
+      this.menuDropdown.classList.add('show');
+      this.menuToggle.classList.add('active');
+    } else {
+      this.menuDropdown.classList.remove('show');
+      this.menuToggle.classList.remove('active');
+    }
+  }
+
+  /**
+   * Cierra el menú desplegable
+   */
+  private closeMenu(): void {
+    this.isMenuOpen = false;
+    this.menuDropdown.classList.remove('show');
+    this.menuToggle.classList.remove('active');
   }
 
   /**
@@ -51,7 +102,7 @@ export class UserMenu {
     this.userNameElement.textContent = firstName;
 
     // Mostrar el menú
-    this.userMenuElement.style.display = 'flex';
+    this.userMenuElement.style.display = 'block';
 
     console.log('User menu shown for:', firstName);
   }
@@ -61,6 +112,31 @@ export class UserMenu {
    */
   public hide(): void {
     this.userMenuElement.style.display = 'none';
+  }
+
+  /**
+   * Establece la instancia del juego para poder cambiar escenas
+   */
+  public setGameInstance(game: Phaser.Game): void {
+    this.gameInstance = game;
+  }
+
+  /**
+   * Maneja la navegación a la pantalla de estadísticas
+   */
+  private handleStats(): void {
+    if (!this.gameInstance) {
+      console.error('Game instance not set in UserMenu');
+      return;
+    }
+
+    // Obtener la escena activa
+    const currentScene = this.gameInstance.scene.getScenes(true)[0];
+
+    if (currentScene) {
+      // Cambiar a la escena de estadísticas
+      currentScene.scene.start('StatsScene');
+    }
   }
 
   /**

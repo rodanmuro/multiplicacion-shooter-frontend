@@ -12,12 +12,17 @@
     <div id="app"></div>
     <!-- User menu outside canvas -->
     <div id="user-menu" style="display: none;">
-      <div class="user-info">
-        <img id="user-avatar" src="" alt="Avatar" class="user-avatar">
+      <div class="user-menu-toggle" id="user-menu-toggle">
         <span id="user-name" class="user-name"></span>
+        <span class="menu-arrow">▼</span>
       </div>
-      <button id="logout-btn" class="logout-btn">Salir</button>
+      <div class="user-menu-dropdown" id="user-menu-dropdown">
+        <button id="stats-btn" class="menu-item stats-btn">📊 Estadísticas</button>
+        <button id="logout-btn" class="menu-item logout-btn">🚪 Salir</button>
+      </div>
     </div>
+    <!-- Avatar hidden, used only for future reference if needed -->
+    <img id="user-avatar" src="" alt="Avatar" style="display: none;">
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
