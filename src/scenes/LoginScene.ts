@@ -227,11 +227,10 @@ export class LoginScene extends Phaser.Scene {
       const userData = await authApiService.verifyGoogleToken(response.credential);
       console.log('✅ Usuario registrado en backend:', userData);
 
-      // 3. Guardar profile del usuario en localStorage
-      localStorage.setItem('user_profile', userData.profile);
-      console.log(`Perfil de usuario: ${userData.profile}`);
+      // 3. Actualizar datos del usuario con información del backend (incluye profile)
+      this.authManager.updateUserFromBackend(userData);
 
-      // 4. Obtener datos del usuario local
+      // 4. Obtener datos del usuario actualizado
       const user = this.authManager.getUser();
 
       // 5. Mostrar mensaje de bienvenida

@@ -15,11 +15,13 @@ export interface ApiResponse<T> {
  */
 export interface UserData {
   id: number;
-  google_id: string;
+  google_id: string | null;
   email: string;
   name: string;
-  picture: string;
+  lastname: string | null;
+  picture: string | null;
   profile: 'student' | 'teacher' | 'admin';
+  group: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -164,4 +166,51 @@ export interface TableStat {
   correct_attempts: number;
   wrong_attempts: number;
   accuracy: number;
+}
+
+/**
+ * Usuario en la lista de administración (con conteo de sesiones)
+ */
+export interface AdminUserListItem extends UserData {
+  game_sessions_count: number;
+}
+
+/**
+ * Respuesta de lista de usuarios (admin)
+ */
+export interface AdminUsersResponse {
+  success: boolean;
+  data: AdminUserListItem[];
+  pagination: PaginationInfo;
+}
+
+/**
+ * Respuesta de sesiones de un usuario específico (admin)
+ */
+export interface AdminUserSessionsResponse {
+  success: boolean;
+  user: {
+    id: number;
+    email: string;
+    name: string;
+    lastname: string | null;
+    profile: string;
+    group: string | null;
+  };
+  data: SessionListItem[];
+  pagination: PaginationInfo;
+}
+
+/**
+ * Respuesta de carga de CSV
+ */
+export interface CsvUploadResponse {
+  success: boolean;
+  message: string;
+  stats: {
+    created: number;
+    updated: number;
+    errors: number;
+  };
+  error_details: string[];
 }

@@ -12,11 +12,13 @@ export class UserMenu {
   private menuDropdown: HTMLElement;
   private userAvatarElement: HTMLImageElement;
   private userNameElement: HTMLElement;
+  private adminButton: HTMLButtonElement;
   private statsButton: HTMLButtonElement;
   private logoutButton: HTMLButtonElement;
   private authManager: AuthManager;
   private gameInstance: Phaser.Game | null = null;
   private isMenuOpen: boolean = false;
+  private currentUser: GoogleUser | null = null;
 
   constructor() {
     this.authManager = AuthManager.getInstance();
@@ -27,10 +29,11 @@ export class UserMenu {
     this.menuDropdown = document.getElementById('user-menu-dropdown') as HTMLElement;
     this.userAvatarElement = document.getElementById('user-avatar') as HTMLImageElement;
     this.userNameElement = document.getElementById('user-name') as HTMLElement;
+    this.adminButton = document.getElementById('admin-btn') as HTMLButtonElement;
     this.statsButton = document.getElementById('stats-btn') as HTMLButtonElement;
     this.logoutButton = document.getElementById('logout-btn') as HTMLButtonElement;
 
-    if (!this.userMenuElement || !this.menuToggle || !this.menuDropdown || !this.userAvatarElement || !this.userNameElement || !this.statsButton || !this.logoutButton) {
+    if (!this.userMenuElement || !this.menuToggle || !this.menuDropdown || !this.userAvatarElement || !this.userNameElement || !this.adminButton || !this.statsButton || !this.logoutButton) {
       console.error('User menu elements not found in DOM');
       return;
     }
@@ -39,6 +42,10 @@ export class UserMenu {
     this.menuToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleMenu();
+    });
+    this.adminButton.addEventListener('click', () => {
+      this.closeMenu();
+      this.handleAdmin();
     });
     this.statsButton.addEventListener('click', () => {
       this.closeMenu();
@@ -85,6 +92,8 @@ export class UserMenu {
    * Muestra el menú de usuario con la información del usuario autenticado
    */
   public show(user: GoogleUser): void {
+    this.currentUser = user;
+
     // Obtener solo el primer nombre
     const firstName = this.getFirstName(user.name || user.email.split('@')[0]);
 
@@ -101,10 +110,17 @@ export class UserMenu {
     // Configurar nombre
     this.userNameElement.textContent = firstName;
 
+    // Mostrar/ocultar botón de admin según perfil
+    if (user.profile === 'admin') {
+      this.adminButton.style.display = 'block';
+    } else {
+      this.adminButton.style.display = 'none';
+    }
+
     // Mostrar el menú
     this.userMenuElement.style.display = 'block';
 
-    console.log('User menu shown for:', firstName);
+    console.log('User menu shown for:', firstName, '| Profile:', user.profile);
   }
 
   /**
@@ -119,6 +135,24 @@ export class UserMenu {
    */
   public setGameInstance(game: Phaser.Game): void {
     this.gameInstance = game;
+  }
+
+  /**
+   * Maneja la navegación al panel de administración
+   */
+  private handleAdmin(): void {
+    if (!this.gameInstance) {
+      console.error('Game instance not set in UserMenu');
+      return;
+    }
+
+    // Obtener la escena activa
+    const currentScene = this.gameInstance.scene.getScenes(true)[0];
+
+    if (currentScene) {
+      // Cambiar a la escena de administración
+      currentScene.scene.start('AdminScene');
+    }
   }
 
   /**

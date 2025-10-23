@@ -134,6 +134,21 @@ export class AuthManager {
   }
 
   /**
+   * Actualiza los datos del usuario con información del backend
+   */
+  public updateUserFromBackend(backendUser: any): void {
+    if (this.authState.user) {
+      this.authState.user = {
+        ...this.authState.user,
+        profile: backendUser.profile
+      };
+      // Guardar cambios en localStorage
+      this.saveSession();
+      console.log('Usuario actualizado con datos del backend. Profile:', backendUser.profile);
+    }
+  }
+
+  /**
    * Guarda la sesión en localStorage
    */
   private saveSession(): void {

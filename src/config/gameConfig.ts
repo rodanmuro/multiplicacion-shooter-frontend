@@ -3,6 +3,7 @@ import { PreloadScene } from '../scenes/PreloadScene';
 import { LoginScene } from '../scenes/LoginScene';
 import { GameScene } from '../scenes/GameScene';
 import { StatsScene } from '../scenes/StatsScene';
+import AdminScene from '../scenes/AdminScene';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -17,5 +18,5 @@ export const gameConfig: Phaser.Types.Core.GameConfig = {
       debug: false
     }
   },
-  scene: [PreloadScene, LoginScene, GameScene, StatsScene]
+  scene: [PreloadScene, LoginScene, GameScene, StatsScene, AdminScene]
 };

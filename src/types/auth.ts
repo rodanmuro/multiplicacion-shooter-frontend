@@ -12,6 +12,7 @@ export interface GoogleUser {
   picture: string;
   given_name?: string;
   family_name?: string;
+  profile: 'student' | 'teacher' | 'admin';
 }
 
 /**
