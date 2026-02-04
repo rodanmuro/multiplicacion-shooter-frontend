@@ -62,8 +62,15 @@ export default class AdminScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // Cargar grupos y usuarios
-    this.loadGroups();
+    // Cargar grupos y usuarios (esperamos a que grupos cargue primero)
+    this.initializeData();
+  }
+
+  /**
+   * Inicializa la carga de datos (grupos y usuarios)
+   */
+  private async initializeData(): Promise<void> {
+    await this.loadGroups();
     this.loadUsers();
   }
 
