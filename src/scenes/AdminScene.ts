@@ -1,23 +1,43 @@
 import Phaser from 'phaser';
 import { adminApiService } from '../services/adminApiService';
-import type { AdminUserListItem, SessionListItem } from '../types/api';
+import type {
+  AdminUserListItem,
+  SessionListItemWithRow,
+  UserSessionSummary,
+  AdminUsersFilterParams,
+  AdminSessionsFilterParams,
+  PaginationInfoExtended,
+} from '../types/api';
 
 /**
- * Escena de administración
+ * Escena de administración mejorada
  * Permite al administrador:
- * - Ver lista de usuarios con paginación
- * - Ver sesiones de cada usuario
+ * - Ver lista de usuarios con filtros (grupo, perfil, búsqueda)
+ * - Ver sesiones de cada usuario con filtro de fechas
+ * - Exportar datos a CSV
  * - Cargar usuarios masivamente desde CSV
  */
 export default class AdminScene extends Phaser.Scene {
-  private currentPage: number = 1;
-  private totalPages: number = 1;
+  // Estado de la vista de usuarios
   private users: AdminUserListItem[] = [];
+  private usersPagination: PaginationInfoExtended | null = null;
+  private usersFilters: AdminUsersFilterParams = {
+    page: 1,
+    per_page: 40,
+    sort_by: 'created_at',
+    order: 'desc'
+  };
+  private availableGroups: string[] = [];
+
+  // Estado de la vista de sesiones
   private selectedUser: AdminUserListItem | null = null;
-  private userSessions: SessionListItem[] = [];
-  private sessionPage: number = 1;
-  private sessionTotalPages: number = 1;
-  private viewMode: 'users' | 'sessions' = 'users';
+  private userSessions: SessionListItemWithRow[] = [];
+  private sessionsSummary: UserSessionSummary | null = null;
+  private sessionsPagination: PaginationInfoExtended | null = null;
+  private sessionsFilters: AdminSessionsFilterParams = { page: 1 };
+
+  // Elementos HTML para filtros
+  private filterContainer: HTMLDivElement | null = null;
 
   constructor() {
     super({ key: 'AdminScene' });
@@ -35,27 +55,38 @@ export default class AdminScene extends Phaser.Scene {
 
     // Título
     this.add
-      .text(centerX, 50, 'PANEL DE ADMINISTRACIÓN', {
-        fontSize: '48px',
+      .text(centerX, 40, 'PANEL DE ADMINISTRACIÓN', {
+        fontSize: '36px',
         color: '#ffff00',
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
 
-    // Cargar usuarios
+    // Cargar grupos y usuarios
+    this.loadGroups();
     this.loadUsers();
   }
 
   /**
-   * Carga la lista de usuarios desde la API
+   * Carga la lista de grupos disponibles
+   */
+  private async loadGroups(): Promise<void> {
+    try {
+      const response = await adminApiService.getGroups();
+      this.availableGroups = response.data;
+    } catch (error) {
+      console.error('Error al cargar grupos:', error);
+    }
+  }
+
+  /**
+   * Carga la lista de usuarios con filtros
    */
   private async loadUsers(): Promise<void> {
     try {
-      const response = await adminApiService.listUsers(this.currentPage);
-
+      const response = await adminApiService.listUsers(this.usersFilters);
       this.users = response.data;
-      this.totalPages = response.pagination.last_page;
-
+      this.usersPagination = response.pagination;
       this.renderUsersView();
     } catch (error) {
       console.error('Error al cargar usuarios:', error);
@@ -72,244 +103,246 @@ export default class AdminScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const centerX = width / 2;
 
-    // Limpiar escena anterior (excepto fondo y título)
-    this.children.list
-      .filter((child) => child.getData('clearable'))
-      .forEach((child) => child.destroy());
+    // Limpiar elementos anteriores
+    this.clearScene();
+    this.removeFilterContainer();
 
-    // Botón volver al menú
-    const backButton = this.add
-      .text(50, 50, '← Volver al Juego', {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#333333',
-        padding: { x: 15, y: 10 },
-      })
-      .setInteractive()
-      .setData('clearable', true);
-
-    backButton.on('pointerdown', () => {
+    // Botón volver al juego
+    this.createButton(50, 40, '← Volver al Juego', () => {
+      this.removeFilterContainer();
       this.scene.start('GameScene');
     });
 
-    backButton.on('pointerover', () => {
-      backButton.setStyle({ backgroundColor: '#555555' });
-    });
-
-    backButton.on('pointerout', () => {
-      backButton.setStyle({ backgroundColor: '#333333' });
-    });
-
     // Botón cargar CSV
-    const uploadButton = this.add
-      .text(width - 50, 50, '📄 Cargar CSV', {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#0066cc',
-        padding: { x: 15, y: 10 },
-      })
-      .setOrigin(1, 0)
-      .setInteractive()
-      .setData('clearable', true);
+    this.createButton(width - 180, 40, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
 
-    uploadButton.on('pointerdown', () => {
-      this.openCsvUpload();
-    });
+    // Botón exportar
+    this.createButton(width - 340, 40, '📥 Exportar', () => this.exportUsers(), '#006633');
 
-    uploadButton.on('pointerover', () => {
-      uploadButton.setStyle({ backgroundColor: '#0088ee' });
-    });
+    // Crear filtros HTML
+    this.createUsersFilterBar();
 
-    uploadButton.on('pointerout', () => {
-      uploadButton.setStyle({ backgroundColor: '#0066cc' });
-    });
-
-    // Tabla de usuarios
-    const tableY = 150;
-    const headerBg = this.add
-      .rectangle(centerX, tableY, 1200, 40, 0x1a1a2e, 1)
-      .setStrokeStyle(2, 0xffff00)
-      .setDepth(100)
-      .setData('clearable', true);
-
-    const headers = ['Email', 'Nombre', 'Perfil', 'Grupo', 'Sesiones', 'Fecha'];
-    const headerPositions = [centerX - 500, centerX - 250, centerX - 50, centerX + 100, centerX + 300, centerX + 450];
-
-    headers.forEach((header, index) => {
+    // Contador de registros
+    if (this.usersPagination) {
+      const from = this.usersPagination.from || 0;
+      const to = this.usersPagination.to || 0;
+      const total = this.usersPagination.total;
       this.add
-        .text(headerPositions[index], tableY, header, {
-          fontSize: '18px',
-          color: '#ffff00',
-          fontStyle: 'bold',
-        })
-        .setOrigin(0, 0.5)
-        .setDepth(101)
-        .setData('clearable', true);
-    });
-
-    // Renderizar filas de usuarios
-    const maxVisible = 8;
-    const itemHeight = 60;
-
-    this.users.slice(0, maxVisible).forEach((user, index) => {
-      const rowY = tableY + 50 + index * itemHeight;
-
-      // Fondo de fila (interactivo)
-      const rowBg = this.add
-        .rectangle(centerX, rowY, 1200, itemHeight - 5, 0x16213e, 0.8)
-        .setStrokeStyle(1, 0x0f3460)
-        .setInteractive()
-        .setData('clearable', true);
-
-      rowBg.on('pointerdown', () => {
-        this.viewUserSessions(user);
-      });
-
-      rowBg.on('pointerover', () => {
-        rowBg.setFillStyle(0x1a2744);
-      });
-
-      rowBg.on('pointerout', () => {
-        rowBg.setFillStyle(0x16213e);
-      });
-
-      // Datos de la fila
-      const email = this.add
-        .text(headerPositions[0], rowY, user.email, {
-          fontSize: '16px',
-          color: '#ffffff',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const name = this.add
-        .text(
-          headerPositions[1],
-          rowY,
-          `${user.name} ${user.lastname || ''}`.trim(),
-          {
-            fontSize: '16px',
-            color: '#ffffff',
-          }
-        )
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const profile = this.add
-        .text(headerPositions[2], rowY, user.profile, {
-          fontSize: '16px',
-          color: user.profile === 'admin' ? '#ff6b6b' : '#4ecdc4',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const group = this.add
-        .text(headerPositions[3], rowY, user.group || '-', {
+        .text(100, 140, `Mostrando ${from}-${to} de ${total} usuarios`, {
           fontSize: '16px',
           color: '#aaaaaa',
         })
-        .setOrigin(0, 0.5)
         .setData('clearable', true);
+    }
 
-      const sessions = this.add
-        .text(headerPositions[4], rowY, user.game_sessions_count.toString(), {
-          fontSize: '16px',
-          color: '#95e1d3',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
+    // Tabla de usuarios con headers clickeables
+    const tableY = 170;
+    const headers = [
+      { label: 'Email', field: 'email' as const },
+      { label: 'Nombre', field: 'name' as const },
+      { label: 'Grupo', field: 'group' as const },
+      { label: 'Sesiones', field: 'sessions_count' as const },
+      { label: 'Promedio', field: null },
+      { label: 'Mejor', field: null },
+      { label: 'Última Sesión', field: null }
+    ];
+    const headerPositions = [centerX - 480, centerX - 280, centerX - 100, centerX + 20, centerX + 120, centerX + 220, centerX + 340];
 
-      const date = this.add
-        .text(
-          headerPositions[5],
-          rowY,
-          new Date(user.created_at).toLocaleDateString(),
-          {
-            fontSize: '16px',
-            color: '#aaaaaa',
-          }
-        )
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
+    this.createSortableTableHeader(centerX, tableY, headers, headerPositions);
+
+    // Renderizar filas (aumentado a 16 para aprovechar las 40 por página)
+    const maxVisible = 16;
+    const itemHeight = 40;
+
+    this.users.slice(0, maxVisible).forEach((user, index) => {
+      const rowY = tableY + 45 + index * itemHeight;
+      this.createUserRow(user, rowY, headerPositions, itemHeight);
     });
 
     // Paginación
-    const paginationY = height - 100;
-
-    if (this.currentPage > 1) {
-      const prevButton = this.add
-        .text(centerX - 150, paginationY, '← Anterior', {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#333333',
-          padding: { x: 15, y: 10 },
-        })
-        .setOrigin(0.5)
-        .setInteractive()
-        .setData('clearable', true);
-
-      prevButton.on('pointerdown', () => {
-        this.currentPage--;
+    this.createPagination(
+      centerX,
+      height - 60,
+      this.usersPagination,
+      (newPage) => {
+        this.usersFilters.page = newPage;
         this.loadUsers();
-      });
-
-      prevButton.on('pointerover', () => {
-        prevButton.setStyle({ backgroundColor: '#555555' });
-      });
-
-      prevButton.on('pointerout', () => {
-        prevButton.setStyle({ backgroundColor: '#333333' });
-      });
-    }
-
-    this.add
-      .text(centerX, paginationY, `Página ${this.currentPage} de ${this.totalPages}`, {
-        fontSize: '20px',
-        color: '#ffffff',
-      })
-      .setOrigin(0.5)
-      .setData('clearable', true);
-
-    if (this.currentPage < this.totalPages) {
-      const nextButton = this.add
-        .text(centerX + 150, paginationY, 'Siguiente →', {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#333333',
-          padding: { x: 15, y: 10 },
-        })
-        .setOrigin(0.5)
-        .setInteractive()
-        .setData('clearable', true);
-
-      nextButton.on('pointerdown', () => {
-        this.currentPage++;
-        this.loadUsers();
-      });
-
-      nextButton.on('pointerover', () => {
-        nextButton.setStyle({ backgroundColor: '#555555' });
-      });
-
-      nextButton.on('pointerout', () => {
-        nextButton.setStyle({ backgroundColor: '#333333' });
-      });
-    }
+      }
+    );
   }
 
   /**
-   * Muestra las sesiones de un usuario específico
+   * Crea la barra de filtros para usuarios (HTML)
+   */
+  private createUsersFilterBar(): void {
+    this.filterContainer = document.createElement('div');
+    this.filterContainer.id = 'admin-filters';
+    this.filterContainer.style.cssText = `
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(26, 26, 46, 0.95);
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      z-index: 1000;
+    `;
+
+    // Select de grupo
+    const groupSelect = document.createElement('select');
+    groupSelect.style.cssText = this.getSelectStyle();
+    groupSelect.innerHTML = `<option value="">Todos los grupos</option>`;
+    this.availableGroups.forEach((g) => {
+      const opt = document.createElement('option');
+      opt.value = g;
+      opt.textContent = g;
+      if (this.usersFilters.group === g) opt.selected = true;
+      groupSelect.appendChild(opt);
+    });
+    groupSelect.onchange = () => {
+      this.usersFilters.group = groupSelect.value || undefined;
+      this.usersFilters.page = 1;
+      this.loadUsers();
+    };
+
+    // Select de perfil
+    const profileSelect = document.createElement('select');
+    profileSelect.style.cssText = this.getSelectStyle();
+    profileSelect.innerHTML = `
+      <option value="">Todos los perfiles</option>
+      <option value="student">Estudiante</option>
+      <option value="teacher">Profesor</option>
+      <option value="admin">Admin</option>
+    `;
+    profileSelect.value = this.usersFilters.profile || '';
+    profileSelect.onchange = () => {
+      this.usersFilters.profile = profileSelect.value || undefined;
+      this.usersFilters.page = 1;
+      this.loadUsers();
+    };
+
+    // Input de búsqueda
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = '🔍 Buscar por nombre o email...';
+    searchInput.value = this.usersFilters.search || '';
+    searchInput.style.cssText = `
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 14px;
+      width: 220px;
+    `;
+    let searchTimeout: number;
+    searchInput.oninput = () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = window.setTimeout(() => {
+        this.usersFilters.search = searchInput.value || undefined;
+        this.usersFilters.page = 1;
+        this.loadUsers();
+      }, 400);
+    };
+
+    // Botón limpiar filtros
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = '✕ Limpiar';
+    clearBtn.style.cssText = `
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      background: #444;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    `;
+    clearBtn.onclick = () => {
+      this.usersFilters = {
+        page: 1,
+        per_page: 40,
+        sort_by: 'created_at',
+        order: 'desc'
+      };
+      this.loadUsers();
+    };
+
+    this.filterContainer.appendChild(groupSelect);
+    this.filterContainer.appendChild(profileSelect);
+    this.filterContainer.appendChild(searchInput);
+    this.filterContainer.appendChild(clearBtn);
+
+    document.body.appendChild(this.filterContainer);
+  }
+
+  /**
+   * Crea una fila de usuario
+   */
+  private createUserRow(
+    user: AdminUserListItem,
+    rowY: number,
+    positions: number[],
+    itemHeight: number
+  ): void {
+    const centerX = this.cameras.main.width / 2;
+
+    // Fondo de fila (interactivo)
+    const rowBg = this.add
+      .rectangle(centerX, rowY, 1100, itemHeight - 5, 0x16213e, 0.8)
+      .setStrokeStyle(1, 0x0f3460)
+      .setInteractive({ useHandCursor: true })
+      .setData('clearable', true);
+
+    rowBg.on('pointerdown', () => this.viewUserSessions(user));
+    rowBg.on('pointerover', () => rowBg.setFillStyle(0x1a2744));
+    rowBg.on('pointerout', () => rowBg.setFillStyle(0x16213e));
+
+    // Email (truncado)
+    const emailDisplay = user.email.length > 28 ? user.email.substring(0, 25) + '...' : user.email;
+    this.createText(positions[0], rowY, emailDisplay, '#ffffff');
+
+    // Nombre
+    const fullName = `${user.name || ''} ${user.lastname || ''}`.trim() || '-';
+    const nameDisplay = fullName.length > 18 ? fullName.substring(0, 15) + '...' : fullName;
+    this.createText(positions[1], rowY, nameDisplay, '#ffffff');
+
+    // Grupo
+    this.createText(positions[2], rowY, user.group || '-', '#aaaaaa');
+
+    // Sesiones
+    this.createText(positions[3], rowY, user.game_sessions_count.toString(), '#95e1d3');
+
+    // Promedio
+    const avgScore = user.avg_score !== null ? user.avg_score.toFixed(1) : '-';
+    this.createText(positions[4], rowY, avgScore, '#4ecdc4');
+
+    // Mejor
+    const bestScore = user.best_score !== null ? user.best_score.toString() : '-';
+    this.createText(positions[5], rowY, bestScore, '#ffff00');
+
+    // Última sesión
+    const lastPlayed = user.last_played_at
+      ? new Date(user.last_played_at).toLocaleDateString()
+      : '-';
+    this.createText(positions[6], rowY, lastPlayed, '#aaaaaa');
+  }
+
+  /**
+   * Muestra las sesiones de un usuario
    */
   private async viewUserSessions(user: AdminUserListItem): Promise<void> {
     this.selectedUser = user;
-    this.sessionPage = 1;
+    this.sessionsFilters = { page: 1 };
 
     try {
-      const response = await adminApiService.getUserSessions(user.id, this.sessionPage);
-
+      const response = await adminApiService.getUserSessions(user.id, this.sessionsFilters);
       this.userSessions = response.data;
-      this.sessionTotalPages = response.pagination.last_page;
-
+      this.sessionsSummary = response.summary;
+      this.sessionsPagination = response.pagination;
       this.renderSessionsView();
     } catch (error) {
       console.error('Error al cargar sesiones:', error);
@@ -326,80 +359,340 @@ export default class AdminScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     const centerX = width / 2;
 
-    // Limpiar escena
-    this.children.list
-      .filter((child) => child.getData('clearable'))
-      .forEach((child) => child.destroy());
+    // Limpiar elementos
+    this.clearScene();
+    this.removeFilterContainer();
 
     if (!this.selectedUser) return;
 
-    // Botón volver a lista de usuarios
-    const backButton = this.add
-      .text(50, 50, '← Volver a Usuarios', {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#333333',
-        padding: { x: 15, y: 10 },
-      })
-      .setInteractive()
-      .setData('clearable', true);
-
-    backButton.on('pointerdown', () => {
+    // Botón volver a usuarios
+    this.createButton(50, 40, '← Volver a Usuarios', () => {
       this.selectedUser = null;
       this.loadUsers();
     });
 
-    backButton.on('pointerover', () => {
-      backButton.setStyle({ backgroundColor: '#555555' });
-    });
+    // Botón exportar sesiones
+    this.createButton(width - 180, 40, '📥 Exportar', () => this.exportUserSessions(), '#006633');
 
-    backButton.on('pointerout', () => {
-      backButton.setStyle({ backgroundColor: '#333333' });
-    });
-
-    // Información del usuario
+    // Info del usuario
+    const userName = `${this.selectedUser.name || ''} ${this.selectedUser.lastname || ''}`.trim();
     this.add
-      .text(
-        centerX,
-        120,
-        `${this.selectedUser.name} ${this.selectedUser.lastname || ''}`.trim(),
-        {
-          fontSize: '32px',
-          color: '#ffffff',
-          fontStyle: 'bold',
-        }
-      )
+      .text(centerX, 80, userName || this.selectedUser.email, {
+        fontSize: '28px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+      })
       .setOrigin(0.5)
       .setData('clearable', true);
 
     this.add
       .text(
         centerX,
-        160,
-        `${this.selectedUser.email} | ${this.selectedUser.profile} | Grupo: ${this.selectedUser.group || 'N/A'}`,
-        {
-          fontSize: '18px',
+        110,
+        `${this.selectedUser.email} | Grupo: ${this.selectedUser.group || 'N/A'}`,
+        { fontSize: '16px', color: '#aaaaaa' }
+      )
+      .setOrigin(0.5)
+      .setData('clearable', true);
+
+    // Resumen de estadísticas
+    if (this.sessionsSummary) {
+      this.createSummaryBar(centerX, 145);
+    }
+
+    // Crear filtros de fecha
+    this.createSessionsFilterBar();
+
+    // Contador de registros
+    if (this.sessionsPagination) {
+      const from = this.sessionsPagination.from || 0;
+      const to = this.sessionsPagination.to || 0;
+      const total = this.sessionsPagination.total;
+      this.add
+        .text(100, 220, `Mostrando ${from}-${to} de ${total} sesiones`, {
+          fontSize: '16px',
           color: '#aaaaaa',
-        }
-      )
-      .setOrigin(0.5)
-      .setData('clearable', true);
+        })
+        .setData('clearable', true);
+    }
 
     // Tabla de sesiones
-    const tableY = 220;
-    const headerBg = this.add
-      .rectangle(centerX, tableY, 1100, 40, 0x1a1a2e, 1)
+    const tableY = 250;
+    const headers = ['#', 'Fecha', 'Hora', 'Puntuación', 'Nivel', 'Disparos', 'Aciertos', 'Precisión'];
+    const positions = [centerX - 500, centerX - 430, centerX - 300, centerX - 150, centerX - 20, centerX + 100, centerX + 220, centerX + 360];
+
+    this.createTableHeader(centerX, tableY, headers, positions);
+
+    // Renderizar filas de sesiones
+    const maxVisible = 7;
+    const itemHeight = 50;
+
+    this.userSessions.slice(0, maxVisible).forEach((session, index) => {
+      const rowY = tableY + 45 + index * itemHeight;
+      this.createSessionRow(session, rowY, positions, itemHeight);
+    });
+
+    // Paginación
+    this.createPagination(
+      centerX,
+      height - 60,
+      this.sessionsPagination,
+      (newPage) => {
+        this.sessionsFilters.page = newPage;
+        this.reloadUserSessions();
+      }
+    );
+  }
+
+  /**
+   * Crea la barra de resumen de estadísticas
+   */
+  private createSummaryBar(centerX: number, y: number): void {
+    if (!this.sessionsSummary) return;
+
+    const s = this.sessionsSummary;
+    const summaryText = `Total: ${s.total_sessions} sesiones | Promedio: ${s.avg_score} pts | Mejor: ${s.best_score} pts | Tiempo jugado: ${s.total_playtime_minutes} min`;
+
+    const bg = this.add
+      .rectangle(centerX, y, 900, 30, 0x1a2744, 0.9)
+      .setStrokeStyle(1, 0x4ecdc4)
+      .setData('clearable', true);
+
+    this.add
+      .text(centerX, y, summaryText, {
+        fontSize: '14px',
+        color: '#4ecdc4',
+      })
+      .setOrigin(0.5)
+      .setData('clearable', true);
+  }
+
+  /**
+   * Crea la barra de filtros para sesiones (HTML)
+   */
+  private createSessionsFilterBar(): void {
+    this.filterContainer = document.createElement('div');
+    this.filterContainer.id = 'admin-filters';
+    this.filterContainer.style.cssText = `
+      position: absolute;
+      top: 175px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(26, 26, 46, 0.95);
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      z-index: 1000;
+    `;
+
+    // Label
+    const label = document.createElement('span');
+    label.textContent = 'Filtrar por fecha:';
+    label.style.color = '#aaa';
+    label.style.fontSize = '14px';
+
+    // Input fecha desde
+    const dateFrom = document.createElement('input');
+    dateFrom.type = 'date';
+    dateFrom.value = this.sessionsFilters.date_from || '';
+    dateFrom.style.cssText = this.getInputStyle();
+
+    // Input fecha hasta
+    const dateTo = document.createElement('input');
+    dateTo.type = 'date';
+    dateTo.value = this.sessionsFilters.date_to || '';
+    dateTo.style.cssText = this.getInputStyle();
+
+    // Botón aplicar
+    const applyBtn = document.createElement('button');
+    applyBtn.textContent = 'Aplicar';
+    applyBtn.style.cssText = `
+      padding: 8px 16px;
+      border-radius: 4px;
+      border: none;
+      background: #0066cc;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    `;
+    applyBtn.onclick = () => {
+      this.sessionsFilters.date_from = dateFrom.value || undefined;
+      this.sessionsFilters.date_to = dateTo.value || undefined;
+      this.sessionsFilters.page = 1;
+      this.reloadUserSessions();
+    };
+
+    // Botón limpiar
+    const clearBtn = document.createElement('button');
+    clearBtn.textContent = '✕ Limpiar';
+    clearBtn.style.cssText = `
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: none;
+      background: #444;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    `;
+    clearBtn.onclick = () => {
+      this.sessionsFilters = { page: 1 };
+      dateFrom.value = '';
+      dateTo.value = '';
+      this.reloadUserSessions();
+    };
+
+    this.filterContainer.appendChild(label);
+    this.filterContainer.appendChild(dateFrom);
+    this.filterContainer.appendChild(document.createTextNode(' a '));
+    this.filterContainer.appendChild(dateTo);
+    this.filterContainer.appendChild(applyBtn);
+    this.filterContainer.appendChild(clearBtn);
+
+    document.body.appendChild(this.filterContainer);
+  }
+
+  /**
+   * Recarga las sesiones del usuario seleccionado
+   */
+  private async reloadUserSessions(): Promise<void> {
+    if (!this.selectedUser) return;
+
+    try {
+      const response = await adminApiService.getUserSessions(
+        this.selectedUser.id,
+        this.sessionsFilters
+      );
+      this.userSessions = response.data;
+      this.sessionsSummary = response.summary;
+      this.sessionsPagination = response.pagination;
+      this.renderSessionsView();
+    } catch (error) {
+      console.error('Error al recargar sesiones:', error);
+    }
+  }
+
+  /**
+   * Crea una fila de sesión
+   */
+  private createSessionRow(
+    session: SessionListItemWithRow,
+    rowY: number,
+    positions: number[],
+    itemHeight: number
+  ): void {
+    const centerX = this.cameras.main.width / 2;
+
+    const rowBg = this.add
+      .rectangle(centerX, rowY, 1050, itemHeight - 5, 0x16213e, 0.8)
+      .setStrokeStyle(1, 0x0f3460)
+      .setData('clearable', true);
+
+    // Número de fila
+    this.createText(positions[0], rowY, session.row_number.toString(), '#888888');
+
+    // Fecha
+    const date = new Date(session.started_at);
+    this.createText(positions[1], rowY, date.toLocaleDateString(), '#ffffff');
+
+    // Hora
+    this.createText(positions[2], rowY, date.toLocaleTimeString().substring(0, 5), '#aaaaaa');
+
+    // Puntuación
+    this.createText(positions[3], rowY, session.final_score.toString(), '#95e1d3');
+
+    // Nivel
+    this.createText(positions[4], rowY, session.max_level_reached.toString(), '#ffffff');
+
+    // Disparos
+    this.createText(positions[5], rowY, session.total_shots.toString(), '#ffffff');
+
+    // Aciertos
+    this.createText(positions[6], rowY, session.correct_shots.toString(), '#4ecdc4');
+
+    // Precisión
+    const accuracyColor = session.accuracy >= 80 ? '#00ff00' : session.accuracy >= 60 ? '#ffaa00' : '#ff6666';
+    this.createText(positions[7], rowY, `${session.accuracy}%`, accuracyColor);
+  }
+
+  // --- Métodos auxiliares ---
+
+  /**
+   * Crea un encabezado de tabla con ordenamiento clickeable
+   */
+  private createSortableTableHeader(
+    centerX: number,
+    y: number,
+    headers: Array<{ label: string; field: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at' | null }>,
+    positions: number[]
+  ): void {
+    this.add
+      .rectangle(centerX, y, 1100, 35, 0x1a1a2e, 1)
       .setStrokeStyle(2, 0xffff00)
       .setDepth(100)
       .setData('clearable', true);
 
-    const headers = ['Fecha', 'Puntuación', 'Nivel', 'Disparos', 'Aciertos', 'Precisión'];
-    const headerPositions = [centerX - 450, centerX - 250, centerX - 100, centerX + 50, centerX + 200, centerX + 400];
+    headers.forEach((header, index) => {
+      const sortIndicator = header.field === this.usersFilters.sort_by
+        ? (this.usersFilters.order === 'asc' ? ' ▲' : ' ▼')
+        : '';
+
+      const headerText = this.add
+        .text(positions[index], y, header.label + sortIndicator, {
+          fontSize: '15px',
+          color: header.field ? '#ffff00' : '#cccc00',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0, 0.5)
+        .setDepth(101)
+        .setData('clearable', true);
+
+      // Hacer clickeable solo si tiene campo asociado
+      if (header.field) {
+        headerText.setInteractive({ useHandCursor: true });
+
+        headerText.on('pointerdown', () => {
+          if (!header.field) return;
+
+          // Si ya está ordenado por este campo, invertir el orden
+          if (this.usersFilters.sort_by === header.field) {
+            this.usersFilters.order = this.usersFilters.order === 'asc' ? 'desc' : 'asc';
+          } else {
+            // Si es un campo nuevo, ordenar descendente por defecto
+            this.usersFilters.sort_by = header.field;
+            this.usersFilters.order = 'desc';
+          }
+          this.usersFilters.page = 1;
+          this.loadUsers();
+        });
+
+        headerText.on('pointerover', () => headerText.setColor('#ffffff'));
+        headerText.on('pointerout', () => headerText.setColor('#ffff00'));
+      }
+    });
+  }
+
+  /**
+   * Crea un encabezado de tabla
+   */
+  private createTableHeader(
+    centerX: number,
+    y: number,
+    headers: string[],
+    positions: number[]
+  ): void {
+    this.add
+      .rectangle(centerX, y, 1100, 35, 0x1a1a2e, 1)
+      .setStrokeStyle(2, 0xffff00)
+      .setDepth(100)
+      .setData('clearable', true);
 
     headers.forEach((header, index) => {
       this.add
-        .text(headerPositions[index], tableY, header, {
-          fontSize: '18px',
+        .text(positions[index], y, header, {
+          fontSize: '15px',
           color: '#ffff00',
           fontStyle: 'bold',
         })
@@ -407,147 +700,129 @@ export default class AdminScene extends Phaser.Scene {
         .setDepth(101)
         .setData('clearable', true);
     });
+  }
 
-    // Renderizar sesiones
-    const maxVisible = 8;
-    const itemHeight = 55;
+  /**
+   * Crea controles de paginación
+   */
+  private createPagination(
+    centerX: number,
+    y: number,
+    pagination: PaginationInfoExtended | null,
+    onChange: (page: number) => void
+  ): void {
+    if (!pagination) return;
 
-    this.userSessions.slice(0, maxVisible).forEach((session, index) => {
-      const rowY = tableY + 50 + index * itemHeight;
+    const currentPage = pagination.current_page;
+    const lastPage = pagination.last_page;
 
-      const rowBg = this.add
-        .rectangle(centerX, rowY, 1100, itemHeight - 5, 0x16213e, 0.8)
-        .setStrokeStyle(1, 0x0f3460)
-        .setData('clearable', true);
-
-      const date = this.add
-        .text(
-          headerPositions[0],
-          rowY,
-          new Date(session.started_at).toLocaleString(),
-          {
-            fontSize: '15px',
-            color: '#ffffff',
-          }
-        )
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const score = this.add
-        .text(headerPositions[1], rowY, session.final_score.toString(), {
-          fontSize: '15px',
-          color: '#95e1d3',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const level = this.add
-        .text(headerPositions[2], rowY, session.max_level_reached.toString(), {
-          fontSize: '15px',
-          color: '#ffffff',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const shots = this.add
-        .text(headerPositions[3], rowY, session.total_shots.toString(), {
-          fontSize: '15px',
-          color: '#ffffff',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const correct = this.add
-        .text(headerPositions[4], rowY, session.correct_shots.toString(), {
-          fontSize: '15px',
-          color: '#4ecdc4',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-
-      const accuracy = this.add
-        .text(headerPositions[5], rowY, `${session.accuracy}%`, {
-          fontSize: '15px',
-          color: session.accuracy >= 80 ? '#00ff00' : '#ffaa00',
-        })
-        .setOrigin(0, 0.5)
-        .setData('clearable', true);
-    });
-
-    // Paginación de sesiones
-    const paginationY = height - 100;
-
-    if (this.sessionPage > 1) {
-      const prevButton = this.add
-        .text(centerX - 150, paginationY, '← Anterior', {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#333333',
-          padding: { x: 15, y: 10 },
-        })
-        .setOrigin(0.5)
-        .setInteractive()
-        .setData('clearable', true);
-
-      prevButton.on('pointerdown', () => {
-        this.sessionPage--;
-        this.viewUserSessions(this.selectedUser!);
-      });
-
-      prevButton.on('pointerover', () => {
-        prevButton.setStyle({ backgroundColor: '#555555' });
-      });
-
-      prevButton.on('pointerout', () => {
-        prevButton.setStyle({ backgroundColor: '#333333' });
-      });
+    if (currentPage > 1) {
+      this.createButton(centerX - 150, y, '← Anterior', () => onChange(currentPage - 1), '#333333');
     }
 
     this.add
-      .text(
-        centerX,
-        paginationY,
-        `Página ${this.sessionPage} de ${this.sessionTotalPages}`,
-        {
-          fontSize: '20px',
-          color: '#ffffff',
-        }
-      )
+      .text(centerX, y, `Página ${currentPage} de ${lastPage}`, {
+        fontSize: '18px',
+        color: '#ffffff',
+      })
       .setOrigin(0.5)
       .setData('clearable', true);
 
-    if (this.sessionPage < this.sessionTotalPages) {
-      const nextButton = this.add
-        .text(centerX + 150, paginationY, 'Siguiente →', {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#333333',
-          padding: { x: 15, y: 10 },
-        })
-        .setOrigin(0.5)
-        .setInteractive()
-        .setData('clearable', true);
-
-      nextButton.on('pointerdown', () => {
-        this.sessionPage++;
-        this.viewUserSessions(this.selectedUser!);
-      });
-
-      nextButton.on('pointerover', () => {
-        nextButton.setStyle({ backgroundColor: '#555555' });
-      });
-
-      nextButton.on('pointerout', () => {
-        nextButton.setStyle({ backgroundColor: '#333333' });
-      });
+    if (currentPage < lastPage) {
+      this.createButton(centerX + 150, y, 'Siguiente →', () => onChange(currentPage + 1), '#333333');
     }
   }
 
   /**
-   * Abre el diálogo de carga de CSV usando un input file HTML
+   * Crea un botón
+   */
+  private createButton(
+    x: number,
+    y: number,
+    text: string,
+    onClick: () => void,
+    bgColor: string = '#333333'
+  ): Phaser.GameObjects.Text {
+    const btn = this.add
+      .text(x, y, text, {
+        fontSize: '16px',
+        color: '#ffffff',
+        backgroundColor: bgColor,
+        padding: { x: 12, y: 8 },
+      })
+      .setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true })
+      .setData('clearable', true);
+
+    btn.on('pointerdown', onClick);
+    btn.on('pointerover', () => btn.setAlpha(0.8));
+    btn.on('pointerout', () => btn.setAlpha(1));
+
+    return btn;
+  }
+
+  /**
+   * Crea un texto simple
+   */
+  private createText(x: number, y: number, text: string, color: string): void {
+    this.add
+      .text(x, y, text, { fontSize: '14px', color })
+      .setOrigin(0, 0.5)
+      .setData('clearable', true);
+  }
+
+  /**
+   * Limpia elementos marcados como 'clearable'
+   */
+  private clearScene(): void {
+    this.children.list
+      .filter((child) => child.getData('clearable'))
+      .forEach((child) => child.destroy());
+  }
+
+  /**
+   * Elimina el contenedor de filtros HTML
+   */
+  private removeFilterContainer(): void {
+    if (this.filterContainer) {
+      this.filterContainer.remove();
+      this.filterContainer = null;
+    }
+  }
+
+  /**
+   * Estilo para select
+   */
+  private getSelectStyle(): string {
+    return `
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    `;
+  }
+
+  /**
+   * Estilo para input
+   */
+  private getInputStyle(): string {
+    return `
+      padding: 8px 12px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 14px;
+    `;
+  }
+
+  /**
+   * Abre el diálogo de carga de CSV
    */
   private openCsvUpload(): void {
-    // Crear input file temporal
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.csv';
@@ -555,34 +830,50 @@ export default class AdminScene extends Phaser.Scene {
     input.onchange = async (e: Event) => {
       const target = e.target as HTMLInputElement;
       const file = target.files?.[0];
-
       if (!file) return;
 
       try {
         const response = await adminApiService.uploadCsv(file);
-
-        // Mostrar resultado
         alert(
           `Carga completada:\n` +
             `- Creados: ${response.stats.created}\n` +
             `- Actualizados: ${response.stats.updated}\n` +
             `- Errores: ${response.stats.errors}\n\n` +
             (response.error_details.length > 0
-              ? `Detalles de errores:\n${response.error_details.join('\n')}`
+              ? `Detalles:\n${response.error_details.join('\n')}`
               : '')
         );
-
-        // Recargar usuarios
         this.loadUsers();
       } catch (error) {
-        console.error('Error al cargar CSV:', error);
-        alert(
-          `Error al cargar CSV: ${error instanceof Error ? error.message : 'Error desconocido'}`
-        );
+        alert(`Error: ${error instanceof Error ? error.message : 'Error desconocido'}`);
       }
     };
 
     input.click();
+  }
+
+  /**
+   * Exporta la lista de usuarios
+   */
+  private async exportUsers(): Promise<void> {
+    try {
+      await adminApiService.exportUsers(this.usersFilters);
+    } catch (error) {
+      alert(`Error al exportar: ${error instanceof Error ? error.message : 'Error'}`);
+    }
+  }
+
+  /**
+   * Exporta las sesiones del usuario seleccionado
+   */
+  private async exportUserSessions(): Promise<void> {
+    if (!this.selectedUser) return;
+
+    try {
+      await adminApiService.exportUserSessions(this.selectedUser.id, this.sessionsFilters);
+    } catch (error) {
+      alert(`Error al exportar: ${error instanceof Error ? error.message : 'Error'}`);
+    }
   }
 
   /**
@@ -593,14 +884,14 @@ export default class AdminScene extends Phaser.Scene {
     const centerX = width / 2;
     const centerY = height / 2;
 
-    const errorBg = this.add
-      .rectangle(centerX, centerY, 600, 300, 0x000000, 0.9)
+    this.add
+      .rectangle(centerX, centerY, 500, 200, 0x000000, 0.95)
       .setStrokeStyle(3, 0xff0000)
       .setData('clearable', true);
 
     this.add
-      .text(centerX, centerY - 50, 'ERROR', {
-        fontSize: '36px',
+      .text(centerX, centerY - 40, 'ERROR', {
+        fontSize: '28px',
         color: '#ff0000',
         fontStyle: 'bold',
       })
@@ -608,28 +899,25 @@ export default class AdminScene extends Phaser.Scene {
       .setData('clearable', true);
 
     this.add
-      .text(centerX, centerY + 20, message, {
-        fontSize: '20px',
+      .text(centerX, centerY + 10, message, {
+        fontSize: '16px',
         color: '#ffffff',
         align: 'center',
-        wordWrap: { width: 500 },
+        wordWrap: { width: 450 },
       })
       .setOrigin(0.5)
       .setData('clearable', true);
 
-    const closeButton = this.add
-      .text(centerX, centerY + 100, 'Cerrar', {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#666666',
-        padding: { x: 20, y: 10 },
-      })
-      .setOrigin(0.5)
-      .setInteractive()
-      .setData('clearable', true);
-
-    closeButton.on('pointerdown', () => {
+    this.createButton(centerX - 40, centerY + 70, 'Cerrar', () => {
+      this.removeFilterContainer();
       this.scene.start('GameScene');
     });
+  }
+
+  /**
+   * Cleanup al salir de la escena
+   */
+  shutdown(): void {
+    this.removeFilterContainer();
   }
 }

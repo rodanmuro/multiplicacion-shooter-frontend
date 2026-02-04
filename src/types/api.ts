@@ -169,10 +169,30 @@ export interface TableStat {
 }
 
 /**
- * Usuario en la lista de administración (con conteo de sesiones)
+ * Usuario en la lista de administración (con conteo de sesiones y estadísticas)
  */
 export interface AdminUserListItem extends UserData {
   game_sessions_count: number;
+  avg_score: number | null;
+  best_score: number | null;
+  last_played_at: string | null;
+}
+
+/**
+ * Filtros aplicados en la respuesta
+ */
+export interface AdminFiltersApplied {
+  group: string | null;
+  profile: string | null;
+  search: string | null;
+}
+
+/**
+ * Paginación extendida con from/to
+ */
+export interface PaginationInfoExtended extends PaginationInfo {
+  from: number | null;
+  to: number | null;
 }
 
 /**
@@ -181,7 +201,43 @@ export interface AdminUserListItem extends UserData {
 export interface AdminUsersResponse {
   success: boolean;
   data: AdminUserListItem[];
-  pagination: PaginationInfo;
+  pagination: PaginationInfoExtended;
+  filters_applied: AdminFiltersApplied;
+}
+
+/**
+ * Respuesta de lista de grupos
+ */
+export interface AdminGroupsResponse {
+  success: boolean;
+  data: string[];
+}
+
+/**
+ * Resumen de estadísticas de sesiones de un usuario
+ */
+export interface UserSessionSummary {
+  total_sessions: number;
+  avg_score: number;
+  best_score: number;
+  total_playtime_minutes: number;
+  first_session: string | null;
+  last_session: string | null;
+}
+
+/**
+ * Sesión con número de fila
+ */
+export interface SessionListItemWithRow extends SessionListItem {
+  row_number: number;
+}
+
+/**
+ * Filtros de fecha aplicados
+ */
+export interface DateFiltersApplied {
+  date_from: string | null;
+  date_to: string | null;
 }
 
 /**
@@ -197,8 +253,10 @@ export interface AdminUserSessionsResponse {
     profile: string;
     group: string | null;
   };
-  data: SessionListItem[];
-  pagination: PaginationInfo;
+  summary: UserSessionSummary;
+  data: SessionListItemWithRow[];
+  pagination: PaginationInfoExtended;
+  filters_applied: DateFiltersApplied;
 }
 
 /**
@@ -213,4 +271,27 @@ export interface CsvUploadResponse {
     errors: number;
   };
   error_details: string[];
+}
+
+/**
+ * Parámetros de filtro para listar usuarios
+ */
+export interface AdminUsersFilterParams {
+  page?: number;
+  group?: string;
+  profile?: string;
+  search?: string;
+  per_page?: number;
+  sort_by?: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at';
+  order?: 'asc' | 'desc';
+}
+
+/**
+ * Parámetros de filtro para sesiones de usuario
+ */
+export interface AdminSessionsFilterParams {
+  page?: number;
+  date_from?: string;
+  date_to?: string;
+  per_page?: number;
 }

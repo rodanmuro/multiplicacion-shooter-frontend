@@ -1,7 +1,10 @@
 import type {
   AdminUsersResponse,
   AdminUserSessionsResponse,
+  AdminGroupsResponse,
   CsvUploadResponse,
+  AdminUsersFilterParams,
+  AdminSessionsFilterParams,
 } from '../types/api';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
@@ -18,15 +21,57 @@ class AdminApiService {
   }
 
   /**
-   * Lista todos los usuarios del sistema (solo admin)
+   * Construye query string desde un objeto de parámetros
    */
-  async listUsers(page: number = 1): Promise<AdminUsersResponse> {
+  private buildQueryString(
+    params: AdminUsersFilterParams | AdminSessionsFilterParams
+  ): string {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : '';
+  }
+
+  /**
+   * Obtiene la lista de grupos únicos
+   */
+  async getGroups(): Promise<AdminGroupsResponse> {
     const token = this.getAuthToken();
     if (!token) {
       throw new Error('No hay token de autenticación');
     }
 
-    const response = await fetch(`${API_URL}/admin/users?page=${page}`, {
+    const response = await fetch(`${API_URL}/admin/groups`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Error al obtener grupos');
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Lista todos los usuarios del sistema con filtros (solo admin)
+   */
+  async listUsers(params: AdminUsersFilterParams = {}): Promise<AdminUsersResponse> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No hay token de autenticación');
+    }
+
+    const queryString = this.buildQueryString(params);
+    const response = await fetch(`${API_URL}/admin/users${queryString}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -43,19 +88,20 @@ class AdminApiService {
   }
 
   /**
-   * Obtiene las sesiones de un usuario específico (solo admin)
+   * Obtiene las sesiones de un usuario específico con filtros (solo admin)
    */
   async getUserSessions(
     userId: number,
-    page: number = 1
+    params: AdminSessionsFilterParams = {}
   ): Promise<AdminUserSessionsResponse> {
     const token = this.getAuthToken();
     if (!token) {
       throw new Error('No hay token de autenticación');
     }
 
+    const queryString = this.buildQueryString(params);
     const response = await fetch(
-      `${API_URL}/admin/users/${userId}/sessions?page=${page}`,
+      `${API_URL}/admin/users/${userId}/sessions${queryString}`,
       {
         method: 'GET',
         headers: {
@@ -102,6 +148,96 @@ class AdminApiService {
     }
 
     return response.json();
+  }
+
+  /**
+   * Exporta la lista de usuarios a CSV
+   */
+  async exportUsers(params: AdminUsersFilterParams = {}): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No hay token de autenticación');
+    }
+
+    const queryString = this.buildQueryString(params);
+    const response = await fetch(`${API_URL}/admin/export/users${queryString}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al exportar usuarios');
+    }
+
+    // Descargar el archivo
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'usuarios.csv';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) {
+        filename = match[1];
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  }
+
+  /**
+   * Exporta las sesiones de un usuario a CSV
+   */
+  async exportUserSessions(
+    userId: number,
+    params: AdminSessionsFilterParams = {}
+  ): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No hay token de autenticación');
+    }
+
+    const queryString = this.buildQueryString(params);
+    const response = await fetch(
+      `${API_URL}/admin/export/users/${userId}/sessions${queryString}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error('Error al exportar sesiones');
+    }
+
+    // Descargar el archivo
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get('Content-Disposition');
+    let filename = 'sesiones.csv';
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="(.+)"/);
+      if (match) {
+        filename = match[1];
+      }
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 }
 
