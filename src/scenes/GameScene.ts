@@ -518,7 +518,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showRestartConfirmation(
-    overlay: Phaser.GameObjects.Rectangle,
+    _overlay: Phaser.GameObjects.Rectangle,
     summaryText: Phaser.GameObjects.Text,
     statsText: Phaser.GameObjects.Text,
     restartText: Phaser.GameObjects.Text

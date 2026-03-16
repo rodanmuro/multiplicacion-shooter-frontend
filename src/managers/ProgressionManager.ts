@@ -5,7 +5,6 @@ import { PROGRESSION_CONFIG, GAME_CONFIG } from '../utils/constants';
  */
 export class ProgressionManager {
   private currentLevel: number = 1;
-  private currentScore: number = 0;
   private sessionStartTime: number = 0;
 
   constructor() {
@@ -17,7 +16,6 @@ export class ProgressionManager {
    */
   public reset(): void {
     this.currentLevel = 1;
-    this.currentScore = 0;
     this.sessionStartTime = Date.now();
   }
 
@@ -25,8 +23,6 @@ export class ProgressionManager {
    * Actualiza el progreso basado en el puntaje actual
    */
   public updateProgress(score: number): void {
-    this.currentScore = score;
-
     // Calcular nivel basado en puntaje
     // Nivel 1 = 0-39 puntos, Nivel 2 = 40-79 puntos, etc.
     // Si el puntaje es negativo, mantener en nivel 1

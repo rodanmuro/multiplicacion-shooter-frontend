@@ -23,9 +23,11 @@ export default class AdminScene extends Phaser.Scene {
   private usersPagination: PaginationInfoExtended | null = null;
   private usersFilters: AdminUsersFilterParams = {
     page: 1,
-    per_page: 40,
+    per_page: 14,
     sort_by: 'created_at',
-    order: 'desc'
+    order: 'desc',
+    date_from: `${new Date().getFullYear()}-01-01`,
+    min_score: 1000
   };
   private availableGroups: string[] = [];
 
@@ -55,8 +57,8 @@ export default class AdminScene extends Phaser.Scene {
 
     // Título
     this.add
-      .text(centerX, 40, 'PANEL DE ADMINISTRACIÓN', {
-        fontSize: '36px',
+      .text(centerX, 25, 'PANEL DE ADMINISTRACIÓN', {
+        fontSize: '28px',
         color: '#ffff00',
         fontStyle: 'bold',
       })
@@ -115,16 +117,16 @@ export default class AdminScene extends Phaser.Scene {
     this.removeFilterContainer();
 
     // Botón volver al juego
-    this.createButton(50, 40, '← Volver al Juego', () => {
+    this.createButton(50, 25, '← Volver al Juego', () => {
       this.removeFilterContainer();
       this.scene.start('GameScene');
     });
 
     // Botón cargar CSV
-    this.createButton(width - 180, 40, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
+    this.createButton(width - 180, 25, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
 
     // Botón exportar
-    this.createButton(width - 340, 40, '📥 Exportar', () => this.exportUsers(), '#006633');
+    this.createButton(width - 340, 25, '📥 Exportar', () => this.exportUsers(), '#006633');
 
     // Crear filtros HTML
     this.createUsersFilterBar();
@@ -135,7 +137,7 @@ export default class AdminScene extends Phaser.Scene {
       const to = this.usersPagination.to || 0;
       const total = this.usersPagination.total;
       this.add
-        .text(100, 140, `Mostrando ${from}-${to} de ${total} usuarios`, {
+        .text(100, 155, `Mostrando ${from}-${to} de ${total} usuarios`, {
           fontSize: '16px',
           color: '#aaaaaa',
         })
@@ -143,27 +145,32 @@ export default class AdminScene extends Phaser.Scene {
     }
 
     // Tabla de usuarios con headers clickeables
-    const tableY = 170;
+    const tableY = 185;
     const headers = [
+      { label: 'No', field: null },
       { label: 'Email', field: 'email' as const },
       { label: 'Nombre', field: 'name' as const },
       { label: 'Grupo', field: 'group' as const },
       { label: 'Sesiones', field: 'sessions_count' as const },
-      { label: 'Promedio', field: null },
+      { label: 'Promedio', field: 'avg_score' as const },
       { label: 'Mejor', field: null },
       { label: 'Última Sesión', field: null }
     ];
-    const headerPositions = [centerX - 480, centerX - 280, centerX - 100, centerX + 20, centerX + 120, centerX + 220, centerX + 340];
+    const headerPositions = [centerX - 530, centerX - 480, centerX - 280, centerX - 100, centerX + 20, centerX + 120, centerX + 220, centerX + 340];
 
     this.createSortableTableHeader(centerX, tableY, headers, headerPositions);
 
-    // Renderizar filas (aumentado a 16 para aprovechar las 40 por página)
-    const maxVisible = 16;
+    // Renderizar filas (14 filas visibles considerando el espacio disponible)
+    const maxVisible = 14;
     const itemHeight = 40;
+
+    // Calcular número de fila base según la página actual
+    const pageOffset = ((this.usersPagination?.current_page || 1) - 1) * (this.usersFilters.per_page || 40);
 
     this.users.slice(0, maxVisible).forEach((user, index) => {
       const rowY = tableY + 45 + index * itemHeight;
-      this.createUserRow(user, rowY, headerPositions, itemHeight);
+      const rowNumber = pageOffset + index + 1;
+      this.createUserRow(user, rowY, headerPositions, itemHeight, rowNumber);
     });
 
     // Paginación
@@ -186,18 +193,73 @@ export default class AdminScene extends Phaser.Scene {
     this.filterContainer.id = 'admin-filters';
     this.filterContainer.style.cssText = `
       position: absolute;
-      top: 80px;
+      top: 85px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
       align-items: center;
+      justify-content: center;
       background: rgba(26, 26, 46, 0.95);
-      padding: 10px 20px;
+      padding: 8px 15px;
       border-radius: 8px;
       border: 1px solid #333;
-      z-index: 1000;
+      z-index: 10;
+      max-width: 95%;
     `;
+
+    const inputStyle = this.getInputStyle();
+
+    // Label fecha
+    const dateLabel = document.createElement('span');
+    dateLabel.textContent = 'Desde:';
+    dateLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+
+    // Input fecha desde
+    const dateFromInput = document.createElement('input');
+    dateFromInput.type = 'date';
+    dateFromInput.value = this.usersFilters.date_from || `${new Date().getFullYear()}-01-01`;
+    dateFromInput.style.cssText = inputStyle + 'width: 130px;';
+    dateFromInput.onchange = () => {
+      this.usersFilters.date_from = dateFromInput.value || undefined;
+      this.usersFilters.page = 1;
+      this.loadUsers();
+    };
+
+    // Label hasta
+    const toLabel = document.createElement('span');
+    toLabel.textContent = 'Hasta:';
+    toLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+
+    // Input fecha hasta
+    const dateToInput = document.createElement('input');
+    dateToInput.type = 'date';
+    dateToInput.value = this.usersFilters.date_to || '';
+    dateToInput.style.cssText = inputStyle + 'width: 130px;';
+    dateToInput.onchange = () => {
+      this.usersFilters.date_to = dateToInput.value || undefined;
+      this.usersFilters.page = 1;
+      this.loadUsers();
+    };
+
+    // Label min score
+    const minScoreLabel = document.createElement('span');
+    minScoreLabel.textContent = 'Mín pts:';
+    minScoreLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+
+    // Input puntaje mínimo
+    const minScoreInput = document.createElement('input');
+    minScoreInput.type = 'number';
+    minScoreInput.min = '0';
+    minScoreInput.step = '100';
+    minScoreInput.value = String(this.usersFilters.min_score || 1000);
+    minScoreInput.style.cssText = inputStyle + 'width: 80px;';
+    minScoreInput.onchange = () => {
+      this.usersFilters.min_score = parseInt(minScoreInput.value) || 0;
+      this.usersFilters.page = 1;
+      this.loadUsers();
+    };
 
     // Select de grupo
     const groupSelect = document.createElement('select');
@@ -235,17 +297,9 @@ export default class AdminScene extends Phaser.Scene {
     // Input de búsqueda
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.placeholder = '🔍 Buscar por nombre o email...';
+    searchInput.placeholder = '🔍 Buscar...';
     searchInput.value = this.usersFilters.search || '';
-    searchInput.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 14px;
-      width: 220px;
-    `;
+    searchInput.style.cssText = inputStyle + 'width: 150px;';
     let searchTimeout: number;
     searchInput.oninput = () => {
       clearTimeout(searchTimeout);
@@ -271,13 +325,29 @@ export default class AdminScene extends Phaser.Scene {
     clearBtn.onclick = () => {
       this.usersFilters = {
         page: 1,
-        per_page: 40,
+        per_page: 14,
         sort_by: 'created_at',
-        order: 'desc'
+        order: 'desc',
+        date_from: `${new Date().getFullYear()}-01-01`,
+        min_score: 1000
       };
+      // Actualizar valores visuales
+      dateFromInput.value = this.usersFilters.date_from || '';
+      dateToInput.value = '';
+      minScoreInput.value = '1000';
+      groupSelect.value = '';
+      profileSelect.value = '';
+      searchInput.value = '';
       this.loadUsers();
     };
 
+    // Agregar elementos en orden
+    this.filterContainer.appendChild(dateLabel);
+    this.filterContainer.appendChild(dateFromInput);
+    this.filterContainer.appendChild(toLabel);
+    this.filterContainer.appendChild(dateToInput);
+    this.filterContainer.appendChild(minScoreLabel);
+    this.filterContainer.appendChild(minScoreInput);
     this.filterContainer.appendChild(groupSelect);
     this.filterContainer.appendChild(profileSelect);
     this.filterContainer.appendChild(searchInput);
@@ -293,7 +363,8 @@ export default class AdminScene extends Phaser.Scene {
     user: AdminUserListItem,
     rowY: number,
     positions: number[],
-    itemHeight: number
+    itemHeight: number,
+    rowNumber: number
   ): void {
     const centerX = this.cameras.main.width / 2;
 
@@ -308,34 +379,37 @@ export default class AdminScene extends Phaser.Scene {
     rowBg.on('pointerover', () => rowBg.setFillStyle(0x1a2744));
     rowBg.on('pointerout', () => rowBg.setFillStyle(0x16213e));
 
+    // Número de fila
+    this.createText(positions[0], rowY, rowNumber.toString(), '#888888');
+
     // Email (truncado)
     const emailDisplay = user.email.length > 28 ? user.email.substring(0, 25) + '...' : user.email;
-    this.createText(positions[0], rowY, emailDisplay, '#ffffff');
+    this.createText(positions[1], rowY, emailDisplay, '#ffffff');
 
     // Nombre
     const fullName = `${user.name || ''} ${user.lastname || ''}`.trim() || '-';
     const nameDisplay = fullName.length > 18 ? fullName.substring(0, 15) + '...' : fullName;
-    this.createText(positions[1], rowY, nameDisplay, '#ffffff');
+    this.createText(positions[2], rowY, nameDisplay, '#ffffff');
 
     // Grupo
-    this.createText(positions[2], rowY, user.group || '-', '#aaaaaa');
+    this.createText(positions[3], rowY, user.group || '-', '#aaaaaa');
 
     // Sesiones
-    this.createText(positions[3], rowY, user.game_sessions_count.toString(), '#95e1d3');
+    this.createText(positions[4], rowY, user.game_sessions_count.toString(), '#95e1d3');
 
     // Promedio
-    const avgScore = user.avg_score !== null ? user.avg_score.toFixed(1) : '-';
-    this.createText(positions[4], rowY, avgScore, '#4ecdc4');
+    const avgScore = user.avg_score !== null && user.avg_score !== undefined ? Number(user.avg_score).toFixed(1) : '-';
+    this.createText(positions[5], rowY, avgScore, '#4ecdc4');
 
     // Mejor
     const bestScore = user.best_score !== null ? user.best_score.toString() : '-';
-    this.createText(positions[5], rowY, bestScore, '#ffff00');
+    this.createText(positions[6], rowY, bestScore, '#ffff00');
 
     // Última sesión
     const lastPlayed = user.last_played_at
       ? new Date(user.last_played_at).toLocaleDateString()
       : '-';
-    this.createText(positions[6], rowY, lastPlayed, '#aaaaaa');
+    this.createText(positions[7], rowY, lastPlayed, '#aaaaaa');
   }
 
   /**
@@ -460,7 +534,7 @@ export default class AdminScene extends Phaser.Scene {
     const s = this.sessionsSummary;
     const summaryText = `Total: ${s.total_sessions} sesiones | Promedio: ${s.avg_score} pts | Mejor: ${s.best_score} pts | Tiempo jugado: ${s.total_playtime_minutes} min`;
 
-    const bg = this.add
+    this.add
       .rectangle(centerX, y, 900, 30, 0x1a2744, 0.9)
       .setStrokeStyle(1, 0x4ecdc4)
       .setData('clearable', true);
@@ -592,7 +666,7 @@ export default class AdminScene extends Phaser.Scene {
   ): void {
     const centerX = this.cameras.main.width / 2;
 
-    const rowBg = this.add
+    this.add
       .rectangle(centerX, rowY, 1050, itemHeight - 5, 0x16213e, 0.8)
       .setStrokeStyle(1, 0x0f3460)
       .setData('clearable', true);
@@ -632,7 +706,7 @@ export default class AdminScene extends Phaser.Scene {
   private createSortableTableHeader(
     centerX: number,
     y: number,
-    headers: Array<{ label: string; field: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at' | null }>,
+    headers: Array<{ label: string; field: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at' | 'avg_score' | null }>,
     positions: number[]
   ): void {
     this.add

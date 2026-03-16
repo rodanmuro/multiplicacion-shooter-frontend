@@ -185,6 +185,9 @@ export interface AdminFiltersApplied {
   group: string | null;
   profile: string | null;
   search: string | null;
+  date_from: string | null;
+  date_to: string | null;
+  min_score: number | null;
 }
 
 /**
@@ -282,8 +285,11 @@ export interface AdminUsersFilterParams {
   profile?: string;
   search?: string;
   per_page?: number;
-  sort_by?: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at';
+  sort_by?: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at' | 'avg_score';
   order?: 'asc' | 'desc';
+  date_from?: string;
+  date_to?: string;
+  min_score?: number;
 }
 
 /**

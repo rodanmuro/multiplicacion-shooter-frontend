@@ -10,8 +10,10 @@ export interface Question {
 /**
  * Dificultad del juego
  */
-export enum Difficulty {
-  EASY = 'easy',      // Tablas 1-5
-  MEDIUM = 'medium',  // Tablas 1-10
-  HARD = 'hard'       // Tablas 1-12
-}
+export const Difficulty = {
+  EASY: 'easy',      // Tablas 1-5
+  MEDIUM: 'medium',  // Tablas 1-10
+  HARD: 'hard'       // Tablas 1-12
+} as const;
+
+export type Difficulty = typeof Difficulty[keyof typeof Difficulty];

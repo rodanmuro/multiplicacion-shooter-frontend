@@ -54,7 +54,8 @@ export class AuthManager {
         name: payload.name,
         picture: payload.picture,
         given_name: payload.given_name,
-        family_name: payload.family_name
+        family_name: payload.family_name,
+        profile: 'student' // Default, será actualizado por el backend
       };
 
       // Actualizar estado

@@ -18,7 +18,6 @@ export class UserMenu {
   private authManager: AuthManager;
   private gameInstance: Phaser.Game | null = null;
   private isMenuOpen: boolean = false;
-  private currentUser: GoogleUser | null = null;
 
   constructor() {
     this.authManager = AuthManager.getInstance();
@@ -92,8 +91,6 @@ export class UserMenu {
    * Muestra el menú de usuario con la información del usuario autenticado
    */
   public show(user: GoogleUser): void {
-    this.currentUser = user;
-
     // Obtener solo el primer nombre
     const firstName = this.getFirstName(user.name || user.email.split('@')[0]);
 

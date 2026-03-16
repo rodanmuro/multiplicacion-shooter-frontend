@@ -8,7 +8,7 @@ export class QuestionTimer extends Phaser.GameObjects.Container {
   private timerText: Phaser.GameObjects.Text;
   private progressBar: Phaser.GameObjects.Graphics;
   private timeRemaining: number = 0;
-  private totalTime: number = GAME_CONFIG.QUESTION_DURATION;
+  private totalTime: number = GAME_CONFIG.SESSION_DURATION;
   private isActive: boolean = false;
 
   constructor(scene: Phaser.Scene) {

@@ -60,10 +60,12 @@ export const sessionApiService = {
    * @param page Número de página (por defecto 1)
    * @returns Listado de sesiones con información de paginación
    */
-  async getSessions(page: number = 1): Promise<SessionsResponse> {
-    const response = await apiClient.get<SessionsResponse>(
-      `/sessions?page=${page}`
-    );
+  async getSessions(page: number = 1, minScore: number = 0, dateFrom: string = ''): Promise<SessionsResponse> {
+    const params = new URLSearchParams({ page: String(page) });
+    if (minScore > 0) params.append('min_score', String(minScore));
+    if (dateFrom) params.append('date_from', dateFrom);
+
+    const response = await apiClient.get<SessionsResponse>(`/sessions?${params}`);
 
     return response.data;
   },

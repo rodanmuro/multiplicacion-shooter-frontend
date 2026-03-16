@@ -9,6 +9,11 @@ export class StatsScene extends Phaser.Scene {
   private sessions: SessionListItem[] = [];
   private currentPage: number = 1;
   private totalPages: number = 1;
+  private totalSessions: number = 0;
+  private minScore: number = 1000;
+  private dateFrom: string = `${new Date().getFullYear()}-01-01`;
+  private filterContainer: HTMLDivElement | null = null;
+  private totalSpan: HTMLSpanElement | null = null;
   private sessionsList!: Phaser.GameObjects.Container;
   private loadingText!: Phaser.GameObjects.Text;
   private detailModal!: Phaser.GameObjects.Container;
@@ -73,6 +78,9 @@ export class StatsScene extends Phaser.Scene {
     // Container para lista de sesiones
     this.sessionsList = this.add.container(0, 0);
 
+    // Barra de filtros HTML
+    this.createFilterBar();
+
     // Cargar sesiones
     this.loadSessions();
   }
@@ -84,11 +92,15 @@ export class StatsScene extends Phaser.Scene {
     try {
       this.loadingText.setVisible(true);
 
-      const response = await sessionApiService.getSessions(this.currentPage);
+      const response = await sessionApiService.getSessions(this.currentPage, this.minScore, this.dateFrom);
 
       this.sessions = response.data;
       this.currentPage = response.pagination.current_page;
       this.totalPages = response.pagination.last_page;
+      this.totalSessions = response.pagination.total;
+      if (this.totalSpan) {
+        this.totalSpan.textContent = `Total sesiones encontradas: ${this.totalSessions}`;
+      }
 
       this.loadingText.setVisible(false);
       this.displaySessions();
@@ -97,6 +109,94 @@ export class StatsScene extends Phaser.Scene {
       this.loadingText.setText('Error al cargar sesiones. Intenta de nuevo.');
       this.loadingText.setColor('#ff0000');
     }
+  }
+
+  /**
+   * Crea la barra de filtros HTML
+   */
+  private createFilterBar(): void {
+    this.filterContainer = document.createElement('div');
+    this.filterContainer.style.cssText = `
+      position: absolute;
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: rgba(26, 26, 46, 0.95);
+      padding: 8px 20px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      z-index: 10;
+    `;
+
+    const label = document.createElement('span');
+    label.textContent = 'Mín pts:';
+    label.style.cssText = 'color: #aaa; font-size: 14px;';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.step = '100';
+    input.value = String(this.minScore);
+    input.style.cssText = `
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 14px;
+      width: 90px;
+    `;
+    let timeout: number;
+    input.oninput = () => {
+      clearTimeout(timeout);
+      timeout = window.setTimeout(() => {
+        this.minScore = parseInt(input.value) || 0;
+        this.currentPage = 1;
+        this.sessionsList.removeAll(true);
+        this.loadSessions();
+      }, 500);
+    };
+
+    const dateLabel = document.createElement('span');
+    dateLabel.textContent = 'Desde:';
+    dateLabel.style.cssText = 'color: #aaa; font-size: 14px;';
+
+    const dateInput = document.createElement('input');
+    dateInput.type = 'date';
+    dateInput.value = this.dateFrom;
+    dateInput.style.cssText = `
+      padding: 6px 10px;
+      border-radius: 4px;
+      border: 1px solid #444;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 14px;
+    `;
+    dateInput.onchange = () => {
+      this.dateFrom = dateInput.value;
+      this.currentPage = 1;
+      this.sessionsList.removeAll(true);
+      this.loadSessions();
+    };
+
+    const separator = document.createElement('span');
+    separator.textContent = '|';
+    separator.style.cssText = 'color: #555; font-size: 14px;';
+
+    this.totalSpan = document.createElement('span');
+    this.totalSpan.style.cssText = 'color: #4ecdc4; font-size: 14px;';
+    this.totalSpan.textContent = 'Total sesiones encontradas: —';
+
+    this.filterContainer.appendChild(dateLabel);
+    this.filterContainer.appendChild(dateInput);
+    this.filterContainer.appendChild(label);
+    this.filterContainer.appendChild(input);
+    this.filterContainer.appendChild(separator);
+    this.filterContainer.appendChild(this.totalSpan);
+    document.body.appendChild(this.filterContainer);
   }
 
   /**
@@ -122,9 +222,9 @@ export class StatsScene extends Phaser.Scene {
       return;
     }
 
-    const startY = 150; // Bajado para dar espacio a los encabezados
+    const startY = 160;
     const itemHeight = 68;
-    const maxVisibleSessions = 9; // Máximo 9 sesiones visibles para evitar solapamiento
+    const maxVisibleSessions = 9;
 
     // Mostrar solo las primeras 9 sesiones (o menos si hay menos)
     const sessionsToDisplay = this.sessions.slice(0, maxVisibleSessions);
@@ -520,6 +620,19 @@ export class StatsScene extends Phaser.Scene {
    * Vuelve a la escena de juego
    */
   private goBackToGame(): void {
+    this.cleanupHtmlElements();
     this.scene.start('GameScene');
+  }
+
+  shutdown(): void {
+    this.cleanupHtmlElements();
+  }
+
+  private cleanupHtmlElements(): void {
+    if (this.filterContainer) {
+      this.filterContainer.remove();
+      this.filterContainer = null;
+      this.totalSpan = null;
+    }
   }
 }
