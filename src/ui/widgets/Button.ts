@@ -19,6 +19,8 @@ export interface ButtonStyle {
   /** Origen del texto (por defecto 0.5, 0.5) */
   origin?: { x: number; y: number };
   hover?: ButtonHover;
+  /** Escala base del botón (1 por defecto); la escala del hover se aplica sobre ella */
+  scale?: number;
   /** Estilo de texto adicional (fontStyle, stroke, strokeThickness…) */
   extra?: Phaser.Types.GameObjects.Text.TextStyle;
   depth?: number;
@@ -44,6 +46,9 @@ export function createButton(scene: Phaser.Scene, opts: ButtonOptions): Phaser.G
   });
   const origin = opts.origin ?? { x: 0.5, y: 0.5 };
   btn.setOrigin(origin.x, origin.y);
+  const baseScale = opts.scale ?? 1;
+  btn.setScale(baseScale);
+  if (baseScale !== 1) btn.setResolution(baseScale);
   if (opts.depth !== undefined) btn.setDepth(opts.depth);
   btn.setInteractive({ useHandCursor: true });
 
@@ -54,12 +59,12 @@ export function createButton(scene: Phaser.Scene, opts: ButtonOptions): Phaser.G
     btn.on('pointerover', () => {
       if (hover.bg !== undefined) btn.setStyle({ backgroundColor: hover.bg });
       if (hover.alpha !== undefined) btn.setAlpha(hover.alpha);
-      if (hover.scale !== undefined) btn.setScale(hover.scale);
+      if (hover.scale !== undefined) btn.setScale(baseScale * hover.scale);
     });
     btn.on('pointerout', () => {
       if (hover.bg !== undefined) btn.setStyle({ backgroundColor: opts.bg });
       if (hover.alpha !== undefined) btn.setAlpha(1);
-      if (hover.scale !== undefined) btn.setScale(1);
+      if (hover.scale !== undefined) btn.setScale(baseScale);
     });
   }
 

@@ -1,4 +1,12 @@
-import { backendUser, expectSceneText, gameScene, visitApp, waitForScene } from '../support/gameDriver';
+import {
+  backendUser,
+  clickSceneText,
+  expectNoSceneText,
+  expectSceneText,
+  gameScene,
+  visitApp,
+  waitForScene,
+} from '../support/gameDriver';
 import { stubGameApi } from '../support/api';
 import { makeJwt } from '../../tests/helpers/jwt';
 
@@ -104,5 +112,41 @@ describe('Login', () => {
       gameScene();
       cy.get('#google-signin-button').should('not.exist');
     });
+  });
+});
+
+describe('Login desde el navegador incrustado de otra app', () => {
+  const INSTAGRAM_ANDROID =
+    'Mozilla/5.0 (Linux; Android 14; SM-A556E Build/UP1A) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/125.0.0.0 Mobile Safari/537.36 Instagram 330.0.0.40.100 Android';
+
+  it('avisa que Google no permite iniciar sesión y no intenta cargar Google Sign-In', () => {
+    visitApp({ authenticated: false, googleStub: true, userAgent: INSTAGRAM_ANDROID });
+
+    expectSceneText('LoginScene', 'Google no permite iniciar sesión\ndentro de Instagram.');
+    expectSceneText('LoginScene', 'Abre este enlace en Chrome o Safari\npara jugar y guardar tu progreso.');
+    expectSceneText('LoginScene', 'Copiar enlace');
+    expectNoSceneText('LoginScene', 'Inicia sesión con tu cuenta de Google\npara guardar tu progreso');
+    cy.get('#google-signin-button').should('not.exist');
+    cy.window().should((win) => {
+      expect((win as any).__gsi.initialized, 'Google Identity Services no se inicializa').to.equal(null);
+    });
+  });
+
+  it('"Copiar enlace" copia la dirección del juego', () => {
+    visitApp({ authenticated: false, googleStub: true, userAgent: INSTAGRAM_ANDROID });
+    cy.window().then((win) => {
+      cy.stub(win.navigator.clipboard, 'writeText').as('copy').resolves();
+    });
+
+    clickSceneText('LoginScene', 'Copiar enlace');
+
+    cy.get('@copy').should('have.been.calledOnceWithExactly', Cypress.config('baseUrl') + '/multiplicacion/');
+    expectSceneText('LoginScene', '¡Enlace copiado!');
+  });
+
+  it('un navegador normal sigue viendo el login con Google', () => {
+    visitApp({ authenticated: false, googleStub: true });
+    cy.get('#google-signin-button').should('exist');
+    expectNoSceneText('LoginScene', 'Copiar enlace');
   });
 });

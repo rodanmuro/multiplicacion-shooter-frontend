@@ -74,11 +74,10 @@ export class UsersView extends AdminView {
     // Botón volver al juego
     this.button(50, 25, '← Volver al Juego', () => this.host.goToGame());
 
-    // Botón cargar CSV
-    this.button(width - 180, 25, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
-
-    // Botón exportar
-    this.button(width - 340, 25, '📥 Exportar', () => this.exportUsers(), COLOR.successDark);
+    // Botones de la esquina superior derecha. Quedan a la izquierda del menú de usuario (HTML,
+    // fijo arriba a la derecha) para que este no tape ninguno.
+    this.button(width - 500, 25, '📥 Exportar', () => this.exportUsers(), COLOR.successDark);
+    this.button(width - 340, 25, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
 
     // Crear filtros HTML
     this.createUsersFilterBar();
@@ -125,7 +124,7 @@ export class UsersView extends AdminView {
    * Crea la barra de filtros para usuarios (HTML)
    */
   private createUsersFilterBar(): void {
-    const bar = new FilterBar('users', 'admin-filters');
+    const bar = new FilterBar('users', 'admin-filters').anchorToCanvas(this.scene, 85);
     this.filterBar = bar;
 
     // Label fecha

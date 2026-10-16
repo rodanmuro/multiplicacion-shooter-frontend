@@ -21,6 +21,8 @@ export interface Layout {
   crosshairScale: number;
   /** Fracción de MAX_CARDS_ON_SCREEN permitida (menos tarjetas en pantallas pequeñas) */
   maxCardsFactor: number;
+  /** El canvas se muestra tan reducido que las pantallas densas (tablas, panel admin) no son usables */
+  compact: boolean;
 }
 
 /** Alto mínimo de una tarjeta en pantalla, en px (una tarjeta de escritorio mide 80) */
@@ -29,6 +31,9 @@ export const MIN_CARD_SCREEN_HEIGHT = 56;
 export const MIN_HUD_SCREEN_SCALE = 0.7;
 /** Tolerancia de puntería con el dedo, en px de pantalla, cuando el canvas está reducido a 0 */
 export const TOUCH_SLOP_SCREEN_PX = 24;
+
+/** Por debajo de esta escala de visualización se usan las variantes compactas de las pantallas */
+export const COMPACT_BELOW_SCALE = 0.75;
 
 const CARD_SCALE_MAX = 1.35;
 const MAX_CARDS_FACTOR_MIN = 0.6;
@@ -49,6 +54,7 @@ export function computeLayout(displayScale: number): Layout {
     hitSlop: (TOUCH_SLOP_SCREEN_PX * (1 - s)) / s,
     crosshairScale: clamp(1 / (s * 1.2), 1, CROSSHAIR_SCALE_MAX),
     maxCardsFactor: clamp(1 - 0.8 * (1 - s), MAX_CARDS_FACTOR_MIN, 1),
+    compact: s < COMPACT_BELOW_SCALE,
   };
 }
 
@@ -60,9 +66,4 @@ export function getDisplayScale(scene: Phaser.Scene): number {
 
 export function getLayout(scene: Phaser.Scene): Layout {
   return computeLayout(getDisplayScale(scene));
-}
-
-/** ¿El dispositivo se maneja con el dedo (pantalla táctil como puntero principal)? */
-export function isTouchDevice(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
 }

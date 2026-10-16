@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { SessionDetail } from '../types/api';
 import { formatDateTime, formatDurationMMSS } from '../utils/format';
 import { COLOR, FONT_SIZE } from './theme';
+import { getLayout } from './layout';
 import { createButton } from './widgets/Button';
 import { createModalFrame } from './widgets/Modal';
 
@@ -10,10 +11,16 @@ import { createModalFrame } from './widgets/Modal';
  */
 export class SessionDetailModal {
   private container: Phaser.GameObjects.Container;
+  private onClose: (() => void) | undefined;
 
-  constructor(scene: Phaser.Scene, detail: SessionDetail) {
+  /** `onClose` se invoca al cerrar el modal (p. ej. para volver a mostrar elementos HTML) */
+  constructor(scene: Phaser.Scene, detail: SessionDetail, onClose?: () => void) {
+    this.onClose = onClose;
     const { centerX, centerY, width, height } = scene.cameras.main;
     const { session } = detail;
+    // En pantallas pequeñas el texto crece y las líneas se separan más (0 en escritorio)
+    const u = getLayout(scene).hudScale - 1;
+    const textScale = 1 + u;
 
     const { backdrop, panel } = createModalFrame(scene, {
       centerX,
@@ -38,6 +45,8 @@ export class SessionDetailModal {
           fontStyle: 'bold',
         })
         .setOrigin(0.5)
+        .setScale(1 + 0.4 * u)
+        .setResolution(1 + 0.4 * u)
     );
 
     const stats = [
@@ -51,20 +60,25 @@ export class SessionDetailModal {
     ];
     stats.forEach((stat, index) => {
       this.container.add(
-        scene.add.text(centerX - 400, centerY - 200 + index * 30, stat, {
-          fontSize: FONT_SIZE.lg,
-          color: COLOR.white,
-        })
+        scene.add
+          .text(centerX - 400, centerY - 200 + index * 30 * (1 + 0.9 * u), stat, {
+            fontSize: FONT_SIZE.lg,
+            color: COLOR.white,
+          })
+          .setScale(textScale)
+          .setResolution(textScale)
       );
     });
 
     this.container.add(
       scene.add
-        .text(centerX, centerY + 30, `Total de disparos: ${detail.shots.length}`, {
+        .text(centerX, centerY + 30 + 200 * u, `Total de disparos: ${detail.shots.length}`, {
           fontSize: FONT_SIZE.md,
           color: COLOR.green,
         })
         .setOrigin(0.5)
+        .setScale(textScale)
+        .setResolution(textScale)
     );
 
     this.container.add(
@@ -75,6 +89,7 @@ export class SessionDetailModal {
         fontSize: FONT_SIZE.xl,
         bg: COLOR.dangerBtn,
         padding: { x: 30, y: 12 },
+        scale: textScale,
         hover: { bg: '#c53030' },
         onClick: () => this.destroy(),
       })
@@ -83,5 +98,7 @@ export class SessionDetailModal {
 
   destroy(): void {
     this.container.destroy();
+    this.onClose?.();
+    this.onClose = undefined;
   }
 }

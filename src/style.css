@@ -333,6 +333,26 @@ button:focus-visible {
   background: #0066cc;
 }
 
+.filter-bar--compact {
+  gap: 6px;
+  padding: 4px 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.filter-bar--compact .filter-label,
+.filter-bar--compact .filter-separator,
+.filter-bar--compact .filter-total {
+  font-size: 12px;
+}
+
+.filter-bar--compact .filter-input,
+.filter-bar--compact .filter-select,
+.filter-bar--compact .filter-btn {
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
 /* ------------------------------------------------------------------ */
 /* Celular                                                             */
 /* ------------------------------------------------------------------ */
@@ -411,6 +431,11 @@ button:focus-visible {
   .menu-item {
     padding: 10px 14px;
     font-size: 14px;
+  }
+
+  /* El panel de administración es solo para escritorio */
+  #admin-btn {
+    display: none !important;
   }
 }
 

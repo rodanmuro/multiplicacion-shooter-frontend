@@ -26,22 +26,21 @@ describe('Panel de administración: CSV y exportación', () => {
   describe('cargar usuarios desde CSV', () => {
     const csv = 'email,group,name,lastname\nana@cevu.edu.co,10A2026,Ana,Pérez\n';
 
-    // DEFECTO ACTUAL (bitácora 016): el menú de usuario (HTML, fijo arriba a la derecha) se
-    // superpone con el botón "Cargar CSV" del canvas y tapa su mitad superior; solo se puede pulsar
-    // la parte de abajo. Por eso los tests de abajo hacen clic en la parte inferior del botón.
-    // Cuando se corrija la posición del menú o del botón, esta prueba debe esperar `false`.
-    it('(comportamiento actual) el menú de usuario tapa parte del botón "Cargar CSV"', () => {
+    // Defecto 2 de la bitácora 016, corregido en la fase 3 del responsivo: los botones se movieron a
+    // la izquierda del menú de usuario (HTML, fijo arriba a la derecha).
+    it('el menú de usuario no tapa ninguno de los botones de la cabecera', () => {
       openAdmin();
 
-      htmlOverlapsSceneText('AdminScene', '📄 Cargar CSV', '#user-menu-toggle').should('equal', true);
+      htmlOverlapsSceneText('AdminScene', '📄 Cargar CSV', '#user-menu-toggle').should('equal', false);
       htmlOverlapsSceneText('AdminScene', '📥 Exportar', '#user-menu-toggle').should('equal', false);
+      htmlOverlapsSceneText('AdminScene', '← Volver al Juego', '#user-menu-toggle').should('equal', false);
     });
 
     it('abre un selector que solo admite archivos .csv', () => {
       openAdmin();
       stubFilePicker({ name: 'usuarios.csv', content: csv });
 
-      clickSceneText('AdminScene', '📄 Cargar CSV', 'bottom');
+      clickSceneText('AdminScene', '📄 Cargar CSV');
 
       cy.wait('@uploadCsv');
       cy.window().should((win) => {
@@ -58,7 +57,7 @@ describe('Panel de administración: CSV y exportación', () => {
       expectSceneText('AdminScene', 'Mostrando 1-3 de 3 usuarios');
       stubFilePicker({ name: 'usuarios.csv', content: csv });
 
-      clickSceneText('AdminScene', '📄 Cargar CSV', 'bottom');
+      clickSceneText('AdminScene', '📄 Cargar CSV');
 
       cy.wait('@uploadCsv').then(({ request }) => {
         expect(request.headers['content-type']).to.match(/^multipart\/form-data; boundary=/);
@@ -75,7 +74,7 @@ describe('Panel de administración: CSV y exportación', () => {
       cy.wait('@getUsers');
       stubFilePicker({ name: 'usuarios.csv', content: csv });
 
-      clickSceneText('AdminScene', '📄 Cargar CSV', 'bottom');
+      clickSceneText('AdminScene', '📄 Cargar CSV');
 
       cy.wait('@uploadCsv');
       cy.wait('@getUsers');
@@ -93,7 +92,7 @@ describe('Panel de administración: CSV y exportación', () => {
       }).as('uploadCsv');
       stubFilePicker({ name: 'usuarios.csv', content: csv });
 
-      clickSceneText('AdminScene', '📄 Cargar CSV', 'bottom');
+      clickSceneText('AdminScene', '📄 Cargar CSV');
 
       cy.wait('@uploadCsv');
       cy.wrap(alerts).should('deep.equal', ['Carga completada:\n- Creados: 3\n- Actualizados: 0\n- Errores: 0\n\n']);
@@ -109,7 +108,7 @@ describe('Panel de administración: CSV y exportación', () => {
       }).as('uploadCsv');
       stubFilePicker({ name: 'usuarios.csv', content: 'email\nana@cevu.edu.co\n' });
 
-      clickSceneText('AdminScene', '📄 Cargar CSV', 'bottom');
+      clickSceneText('AdminScene', '📄 Cargar CSV');
 
       cy.wait('@uploadCsv');
       cy.wrap(alerts).should('deep.equal', ['Error: CSV inválido: Falta la columna group']);

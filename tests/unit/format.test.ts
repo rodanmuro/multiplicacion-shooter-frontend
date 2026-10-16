@@ -3,6 +3,7 @@ import {
   formatClock,
   formatDate,
   formatDateTime,
+  formatDateTimeShort,
   formatDurationMMSS,
   formatTime,
 } from '../../src/utils/format';
@@ -47,6 +48,10 @@ describe('format', () => {
 
     it('formatDateTime une fecha y hora', () => {
       expect(formatDateTime(d)).toBe('05/03/2026 14:07');
+    });
+
+    it('formatDateTimeShort omite el año', () => {
+      expect(formatDateTimeShort(d)).toBe('05/03 14:07');
     });
 
     it('acepta cadenas ISO', () => {

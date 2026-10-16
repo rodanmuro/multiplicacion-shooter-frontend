@@ -29,6 +29,8 @@ export interface VisitOptions {
   tokenExpired?: boolean;
   /** Define window.google con un doble que registra initialize/renderButton. */
   googleStub?: boolean;
+  /** User-Agent a simular (p. ej. el navegador incrustado de Instagram). */
+  userAgent?: string;
   /** Semilla de Math.random para reducir la variación entre ejecuciones. */
   seed?: number;
 }
@@ -57,6 +59,7 @@ export function visitApp(options: VisitOptions = {}): VisitResult {
     name = 'Ana Pérez',
     tokenExpired = false,
     googleStub = false,
+    userAgent,
     seed = 20260301,
   } = options;
 
@@ -66,6 +69,10 @@ export function visitApp(options: VisitOptions = {}): VisitResult {
   cy.visit('/multiplicacion/', {
     onBeforeLoad(win) {
       win.Math.random = seededRandom(seed);
+
+      if (userAgent) {
+        Object.defineProperty(win.navigator, 'userAgent', { get: () => userAgent, configurable: true });
+      }
 
       if (authenticated) {
         win.localStorage.setItem('google_auth_token', token);
@@ -462,7 +469,9 @@ export function snapshotScene(scene: AnyObj): AnyObj[] {
 }
 
 const STYLE_PROPS = [
-  'position', 'top', 'left', 'display', 'flexWrap', 'gap', 'alignItems', 'justifyContent',
+  // `top` y `left` no se capturan: ahora dependen de dónde esté el canvas en la ventana
+  // (se comprueban aparte contra el rectángulo del canvas)
+  'position', 'display', 'flexWrap', 'gap', 'alignItems', 'justifyContent',
   'backgroundColor', 'color', 'fontSize', 'padding', 'borderRadius', 'border', 'zIndex', 'cursor',
 ];
 

@@ -80,8 +80,6 @@
     "tag": "div",
     "style": {
       "position": "absolute",
-      "top": "70px",
-      "left": "640px",
       "display": "flex",
       "flexWrap": "nowrap",
       "gap": "10px",
@@ -101,8 +99,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -123,8 +119,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -147,8 +141,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -169,8 +161,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -195,8 +185,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -217,8 +205,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",

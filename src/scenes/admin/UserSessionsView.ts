@@ -151,7 +151,7 @@ export class UserSessionsView extends AdminView {
    * Crea la barra de filtros para sesiones (HTML)
    */
   private createSessionsFilterBar(): void {
-    const bar = new FilterBar('sessions', 'admin-filters');
+    const bar = new FilterBar('sessions', 'admin-filters').anchorToCanvas(this.scene, 175);
     this.filterBar = bar;
 
     const label = bar.label('Filtrar por fecha:');

@@ -19,10 +19,10 @@
     {"type":"Text","x":720,"y":230,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"1000.0","origin":[0,0.5],"fontSize":"14px","color":"#4ecdc4"},
     {"type":"Text","x":820,"y":230,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"1500","origin":[0,0.5],"fontSize":"14px","color":"#ffff00"},
     {"type":"Text","x":940,"y":230,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"<FECHA>","origin":[0,0.5],"fontSize":"14px","color":"#aaaaaa"},
-    {"type":"Text","x":1020,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"📄 Cargar CSV","origin":[0,0.5],"fontSize":"16px","color":"#ffffff","backgroundColor":"#0066cc"},
     {"type":"Text","x":50,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"← Volver al Juego","origin":[0,0.5],"fontSize":"16px","color":"#ffffff","backgroundColor":"#333333"},
     {"type":"Text","x":600,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"PANEL DE ADMINISTRACIÓN","origin":[0.5,0.5],"fontSize":"28px","color":"#ffff00","fontStyle":"bold"},
-    {"type":"Text","x":860,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"📥 Exportar","origin":[0,0.5],"fontSize":"16px","color":"#ffffff","backgroundColor":"#006633"},
+    {"type":"Text","x":700,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"📥 Exportar","origin":[0,0.5],"fontSize":"16px","color":"#ffffff","backgroundColor":"#006633"},
+    {"type":"Text","x":860,"y":25,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"📄 Cargar CSV","origin":[0,0.5],"fontSize":"16px","color":"#ffffff","backgroundColor":"#0066cc"},
     {"type":"Text","x":120,"y":270,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"estudiante2@cevu.edu.co","origin":[0,0.5],"fontSize":"14px","color":"#ffffff"},
     {"type":"Text","x":320,"y":270,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"Nombre2 Apellido2","origin":[0,0.5],"fontSize":"14px","color":"#ffffff"},
     {"type":"Text","x":500,"y":270,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"10B2026","origin":[0,0.5],"fontSize":"14px","color":"#aaaaaa"},
@@ -148,8 +148,6 @@
     "tag": "div",
     "style": {
       "position": "absolute",
-      "top": "85px",
-      "left": "640px",
       "display": "flex",
       "flexWrap": "wrap",
       "gap": "8px",
@@ -170,8 +168,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -192,8 +188,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -216,8 +210,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -238,8 +230,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -262,8 +252,6 @@
         "tag": "span",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -284,8 +272,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -310,8 +296,6 @@
         "tag": "select",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -354,8 +338,6 @@
         "tag": "select",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -398,8 +380,6 @@
         "tag": "input",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",
@@ -423,8 +403,6 @@
         "tag": "button",
         "style": {
           "position": "static",
-          "top": "auto",
-          "left": "auto",
           "display": "block",
           "flexWrap": "nowrap",
           "gap": "normal",

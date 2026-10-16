@@ -10,6 +10,7 @@ describe('computeLayout', () => {
       hitSlop: 0,
       crosshairScale: 1,
       maxCardsFactor: 1,
+      compact: false,
     });
   });
 
@@ -43,6 +44,13 @@ describe('computeLayout', () => {
     expect(c.cardScale).toBeGreaterThanOrEqual(b.cardScale);
     expect(b.hitSlop).toBeGreaterThan(a.hitSlop);
     expect(c.hitSlop).toBeGreaterThan(b.hitSlop);
+  });
+
+  it('es compacto por debajo de 0,75 y no por encima', () => {
+    expect(computeLayout(0.74).compact).toBe(true);
+    expect(computeLayout(0.49).compact).toBe(true);
+    expect(computeLayout(0.75).compact).toBe(false);
+    expect(computeLayout(1).compact).toBe(false);
   });
 
   it('respeta los topes aunque la pantalla sea diminuta', () => {

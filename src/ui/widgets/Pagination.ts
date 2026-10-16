@@ -14,6 +14,8 @@ export interface PaginationOptions {
   buttonOffset: number;
   button: ButtonStyle;
   labelFontSize: string;
+  /** Factor de tamaño del indicador (1 por defecto) */
+  labelScale?: number;
 }
 
 /**
@@ -43,6 +45,8 @@ export function createPagination(
     scene.add
       .text(centerX, y, opts.label, { fontSize: opts.labelFontSize, color: COLOR.white })
       .setOrigin(0.5)
+      .setScale(opts.labelScale ?? 1)
+      .setResolution(opts.labelScale ?? 1)
   );
 
   if (currentPage < lastPage) {

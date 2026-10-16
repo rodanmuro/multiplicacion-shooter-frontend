@@ -1,4 +1,4 @@
-import { isTouchDevice } from './layout';
+import { isTouchDevice } from '../utils/environment';
 
 /**
  * Pantalla completa para celular: el juego gana el espacio de la barra de direcciones.

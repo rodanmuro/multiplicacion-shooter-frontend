@@ -48,6 +48,8 @@ export interface DataTableOptions<T> {
   };
   /** Ordenamiento actual y manejador, si la tabla es ordenable */
   sort?: { by?: string; order?: string; onSort: (field: string) => void };
+  /** Factor de tamaño del texto de encabezados y celdas (1 por defecto) */
+  textScale?: number;
   firstRowY: number;
   rowSpacing: number;
   rowBackground: RowBackground;
@@ -94,6 +96,7 @@ function createHeader<T>(scene: Phaser.Scene, opts: DataTableOptions<T>): void {
       })
       .setOrigin(0, 0.5)
       .setDepth(101);
+    applyTextScale(text, opts.textScale);
     opts.onCreate(text);
 
     if (sortable) {
@@ -136,6 +139,7 @@ function createRow<T>(
           ...(cell.fontStyle ? { fontStyle: cell.fontStyle } : {}),
         })
         .setOrigin(0, 0.5);
+      applyTextScale(text, opts.textScale);
       register(text);
     }
   });
@@ -148,4 +152,11 @@ function createRow<T>(
   }
 
   if (container) opts.onCreate(container);
+}
+
+/** Agranda el texto y lo dibuja a mayor resolución para que no se vea borroso. */
+function applyTextScale(text: Phaser.GameObjects.Text, scale = 1): void {
+  if (scale === 1) return;
+  text.setScale(scale);
+  text.setResolution(scale);
 }

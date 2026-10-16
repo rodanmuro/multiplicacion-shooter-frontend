@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { sessionApiService } from '../services/sessionApiService';
 import type { SessionListItem } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
-import { formatDate, formatTime } from '../utils/format';
+import { formatDate, formatDateTimeShort, formatTime } from '../utils/format';
+import { getLayout } from '../ui/layout';
 import { createButton } from '../ui/widgets/Button';
 import { SessionDetailModal } from '../ui/SessionDetailModal';
 import { createPagination } from '../ui/widgets/Pagination';
@@ -63,6 +64,7 @@ export class StatsScene extends Phaser.Scene {
       bg: COLOR.slateBtn,
       padding: { x: 15, y: 10 },
       origin: { x: 0, y: 0.5 },
+      scale: getLayout(this).hudScale,
       hover: { bg: '#2d3748' },
       onClick: () => this.goBackToGame(),
     });
@@ -103,7 +105,7 @@ export class StatsScene extends Phaser.Scene {
       this.totalPages = response.pagination.last_page;
       this.totalSessions = response.pagination.total;
       if (this.totalSpan) {
-        this.totalSpan.textContent = `Total sesiones encontradas: ${this.totalSessions}`;
+        this.totalSpan.textContent = this.totalLabel(String(this.totalSessions));
       }
 
       this.loadingText.setVisible(false);
@@ -115,11 +117,17 @@ export class StatsScene extends Phaser.Scene {
     }
   }
 
+  /** Texto del total de sesiones (más corto en pantallas reducidas) */
+  private totalLabel(count: string): string {
+    return getLayout(this).compact ? `Total: ${count}` : `Total sesiones encontradas: ${count}`;
+  }
+
   /**
    * Crea la barra de filtros HTML
    */
   private createFilterBar(): void {
-    this.filterBar = new FilterBar('stats');
+    const compact = getLayout(this).compact;
+    this.filterBar = new FilterBar('stats').compact(compact).anchorToCanvas(this, compact ? 62 : 70);
 
     const label = this.filterBar.label('Mín pts:');
 
@@ -151,7 +159,7 @@ export class StatsScene extends Phaser.Scene {
 
     const separator = this.filterBar.separator('|');
 
-    this.totalSpan = this.filterBar.total('Total sesiones encontradas: —');
+    this.totalSpan = this.filterBar.total(this.totalLabel('—'));
 
     this.filterBar
       .append(dateLabel, dateInput, label, input, separator, this.totalSpan)
@@ -181,17 +189,22 @@ export class StatsScene extends Phaser.Scene {
       return;
     }
 
+    // En pantallas reducidas: texto más grande, menos columnas y filas más juntas (caben las mismas 9)
+    const layout = getLayout(this);
+    const compact = layout.compact;
+
     createDataTable<SessionListItem>(this, {
       centerX: this.cameras.main.centerX,
-      columns: this.sessionColumns(),
+      columns: compact ? this.compactSessionColumns() : this.sessionColumns(),
       rows: this.sessions,
       maxRows: 9,
-      header: { y: 110, width: 1000, fontSize: FONT_SIZE.sm },
-      firstRowY: 160,
-      rowSpacing: 68,
+      header: { y: compact ? 150 : 110, width: 1000, fontSize: FONT_SIZE.sm },
+      textScale: layout.hudScale,
+      firstRowY: compact ? 200 : 160,
+      rowSpacing: compact ? 58 : 68,
       rowBackground: {
         width: 1000,
-        height: 60,
+        height: compact ? 52 : 60,
         fill: 0x2d3748,
         alpha: 0.8,
         hover: { over: [0x4a5568, 0.9], out: [0x2d3748, 0.8] },
@@ -205,6 +218,64 @@ export class StatsScene extends Phaser.Scene {
     if (this.totalPages > 1) {
       this.createPaginationControls();
     }
+  }
+
+  /**
+   * Columnas de la lista de sesiones en pantallas reducidas: sin "Disparos" y con la fecha corta
+   */
+  private compactSessionColumns(): TableColumn<SessionListItem>[] {
+    return [
+      {
+        header: 'Fecha y Hora',
+        headerX: -480,
+        x: -480,
+        cell: (s) => ({ text: formatDateTimeShort(s.started_at), color: COLOR.white, fontSize: FONT_SIZE.md }),
+      },
+      {
+        header: 'Puntaje',
+        headerX: -250,
+        x: -250,
+        cell: (s) => ({
+          text: `${s.final_score} pts`,
+          color: COLOR.yellow,
+          fontSize: FONT_SIZE.lgPlus,
+          fontStyle: 'bold',
+        }),
+      },
+      {
+        header: 'Nivel',
+        headerX: -60,
+        x: -60,
+        cell: (s) => ({ text: `Nivel ${s.max_level_reached}`, color: COLOR.green, fontSize: FONT_SIZE.md }),
+      },
+      {
+        header: 'Precisión',
+        headerX: 110,
+        x: 110,
+        cell: (s) => ({
+          text: `${s.accuracy.toFixed(1)}%`,
+          color: s.accuracy >= 70 ? COLOR.green : '#ff9900',
+          fontSize: FONT_SIZE.md,
+        }),
+      },
+      {
+        header: '',
+        headerX: 270,
+        x: 270,
+        render: (s, x, y) =>
+          createButton(this, {
+            x,
+            y,
+            text: 'Ver detalle',
+            fontSize: FONT_SIZE.sm,
+            bg: '#4299e1',
+            padding: { x: 10, y: 5 },
+            origin: { x: 0, y: 0.5 },
+            scale: getLayout(this).hudScale,
+            onClick: () => this.showSessionDetail(s.id),
+          }),
+      },
+    ];
   }
 
   /**
@@ -289,6 +360,8 @@ export class StatsScene extends Phaser.Scene {
     const y = this.cameras.main.height - 40;
     const centerX = this.cameras.main.centerX;
 
+    const layout = getLayout(this);
+    const grow = layout.hudScale - 1;
     const controls = createPagination(this, {
       centerX,
       y,
@@ -296,12 +369,14 @@ export class StatsScene extends Phaser.Scene {
       lastPage: this.totalPages,
       onChange: (page) => this.changePage(page),
       label: `${this.currentPage} / ${this.totalPages}`,
-      buttonOffset: 100,
+      buttonOffset: 100 + 150 * grow,
       labelFontSize: FONT_SIZE.lg,
+      labelScale: layout.hudScale,
       button: {
         fontSize: FONT_SIZE.lg,
         bg: COLOR.slateBtn,
         padding: { x: 15, y: 8 },
+        scale: layout.hudScale,
       },
     });
     controls.forEach((control) => this.sessionsList.add(control));
@@ -321,7 +396,9 @@ export class StatsScene extends Phaser.Scene {
   private async showSessionDetail(sessionId: number): Promise<void> {
     try {
       const detail = await sessionApiService.getSessionDetail(sessionId);
-      new SessionDetailModal(this, detail);
+      // La barra de filtros es HTML y quedaría por encima del modal: se oculta mientras está abierto
+      this.filterBar?.setVisible(false);
+      new SessionDetailModal(this, detail, () => this.filterBar?.setVisible(true));
     } catch (error) {
       console.error('Error al cargar detalle de sesión:', error);
       alert('Error al cargar el detalle de la sesión');

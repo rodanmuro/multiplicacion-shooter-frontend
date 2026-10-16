@@ -41,3 +41,9 @@ export function formatTime(value: string | Date): string {
 export function formatDateTime(value: string | Date): string {
   return `${formatDate(value)} ${formatTime(value)}`;
 }
+
+/** `20/03 14:05` (sin año, para pantallas pequeñas) */
+export function formatDateTimeShort(value: string | Date): string {
+  // Se recorta formatDate (dd/mm/aaaa): pedirle al navegador solo día y mes da "28/3" en Chrome
+  return `${formatDate(value).slice(0, 5)} ${formatTime(value)}`;
+}
