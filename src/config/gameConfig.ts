@@ -3,7 +3,7 @@ import { PreloadScene } from '../scenes/PreloadScene';
 import { LoginScene } from '../scenes/LoginScene';
 import { GameScene } from '../scenes/GameScene';
 import { StatsScene } from '../scenes/StatsScene';
-import AdminScene from '../scenes/AdminScene';
+import AdminScene from '../scenes/admin/AdminScene';
 import { COLOR } from '../ui/theme';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
