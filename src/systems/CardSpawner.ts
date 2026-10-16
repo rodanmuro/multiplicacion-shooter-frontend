@@ -44,6 +44,14 @@ export class CardSpawner {
   }
 
   /**
+   * Máximo de tarjetas simultáneas: el definido en CARD_CONFIG, reducido en pantallas pequeñas
+   * para que el campo no se sature (20 en escritorio)
+   */
+  public getMaxCards(): number {
+    return Math.round(CARD_CONFIG.MAX_CARDS_ON_SCREEN * getLayout(this.scene).maxCardsFactor);
+  }
+
+  /**
    * Inicia el spawn de tarjetas para una nueva pregunta
    */
   public startSpawning(question: Question): void {
@@ -94,7 +102,7 @@ export class CardSpawner {
     if (!this.currentQuestion) return;
 
     // Limitar número de tarjetas en pantalla
-    if (this.cards.length >= CARD_CONFIG.MAX_CARDS_ON_SCREEN) {
+    if (this.cards.length >= this.getMaxCards()) {
       return;
     }
 

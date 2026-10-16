@@ -69,6 +69,21 @@ describe('Celular: jugabilidad táctil', () => {
       });
     });
 
+    it('hay menos tarjetas simultáneas para no saturar el campo', () => {
+      cy.window().then((win) => {
+        expect(getScene(win, 'GameScene').cardSpawner.getMaxCards(), 'máximo de tarjetas').to.equal(12);
+      });
+    });
+
+    it('el texto de las tarjetas se dibuja a mayor resolución al agrandarse', () => {
+      cy.window({ log: false, timeout: 20000 })
+        .should((win) => expect(cardsOf(getScene(win, 'GameScene')).length).to.be.greaterThan(0))
+        .then((win) => {
+          const card = cardsOf(getScene(win, 'GameScene'))[0];
+          expect(card.numberText.style.resolution, 'resolución del número').to.equal(card.scaleX);
+        });
+    });
+
     it('el HUD se agranda y el temporizador baja con la caja de la pregunta', () => {
       cy.window().then((win) => {
         const scene = getScene(win, 'GameScene');
@@ -94,13 +109,14 @@ describe('Celular: jugabilidad táctil', () => {
       cy.wait('@createSession');
     });
 
-    it('nada cambia: tarjetas, HUD y mira a tamaño natural', () => {
+    it('nada cambia: tarjetas, HUD y mira a tamaño natural, hasta 20 tarjetas', () => {
       parkCardAtCenter().then(({ scale }) => expect(scale).to.equal(1));
       cy.window().then((win) => {
         const scene = getScene(win, 'GameScene');
         expect(scene.sessionTimerDisplay.timerText.scaleX).to.equal(1);
         expect(scene.sessionTimerDisplay.timerText.y).to.equal(90);
         expect(scene.crosshair.scaleX).to.equal(1);
+        expect(scene.cardSpawner.getMaxCards()).to.equal(20);
       });
     });
 

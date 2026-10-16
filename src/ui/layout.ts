@@ -19,6 +19,8 @@ export interface Layout {
   hitSlop: number;
   /** Factor de tamaño de la mira */
   crosshairScale: number;
+  /** Fracción de MAX_CARDS_ON_SCREEN permitida (menos tarjetas en pantallas pequeñas) */
+  maxCardsFactor: number;
 }
 
 /** Alto mínimo de una tarjeta en pantalla, en px (una tarjeta de escritorio mide 80) */
@@ -28,7 +30,8 @@ export const MIN_HUD_SCREEN_SCALE = 0.7;
 /** Tolerancia de puntería con el dedo, en px de pantalla, cuando el canvas está reducido a 0 */
 export const TOUCH_SLOP_SCREEN_PX = 24;
 
-const CARD_SCALE_MAX = 1.6;
+const CARD_SCALE_MAX = 1.35;
+const MAX_CARDS_FACTOR_MIN = 0.6;
 const HUD_SCALE_MAX = 1.6;
 const CROSSHAIR_SCALE_MAX = 1.8;
 const CARD_HEIGHT = 80;
@@ -45,6 +48,7 @@ export function computeLayout(displayScale: number): Layout {
     // Continuo: 0 a escala 1 y crece al reducirse el canvas
     hitSlop: (TOUCH_SLOP_SCREEN_PX * (1 - s)) / s,
     crosshairScale: clamp(1 / (s * 1.2), 1, CROSSHAIR_SCALE_MAX),
+    maxCardsFactor: clamp(1 - 0.8 * (1 - s), MAX_CARDS_FACTOR_MIN, 1),
   };
 }
 
@@ -56,4 +60,9 @@ export function getDisplayScale(scene: Phaser.Scene): number {
 
 export function getLayout(scene: Phaser.Scene): Layout {
   return computeLayout(getDisplayScale(scene));
+}
+
+/** ¿El dispositivo se maneja con el dedo (pantalla táctil como puntero principal)? */
+export function isTouchDevice(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches === true;
 }

@@ -34,6 +34,7 @@ export class QuestionDisplay extends Phaser.GameObjects.Container {
     const hudScale = getLayout(scene).hudScale;
     this.background.setScale(hudScale);
     this.questionText.setScale(hudScale);
+    this.questionText.setResolution(hudScale);
 
     // Añadir elementos al contenedor
     this.add([this.background, this.questionText]);

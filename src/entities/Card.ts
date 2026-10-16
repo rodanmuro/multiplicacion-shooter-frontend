@@ -53,8 +53,11 @@ export class Card extends Phaser.GameObjects.Container {
     // Profundidad para que esté debajo de la mira
     this.setDepth(50);
 
-    // En pantallas pequeñas la tarjeta se agranda para seguir siendo tocable (1 en escritorio)
-    this.setScale(getLayout(scene).cardScale);
+    // En pantallas pequeñas la tarjeta se agranda para seguir siendo tocable (1 en escritorio).
+    // El texto se dibuja a mayor resolución para que no se vea borroso al agrandarse.
+    const cardScale = getLayout(scene).cardScale;
+    this.setScale(cardScale);
+    this.numberText.setResolution(cardScale);
 
     // Hacer la tarjeta interactiva con área de hit explícita
     this.setSize(CARD_CONFIG.CARD_WIDTH, CARD_CONFIG.CARD_HEIGHT);

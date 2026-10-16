@@ -27,7 +27,9 @@ export class ScoreDisplay extends Phaser.GameObjects.Container {
     this.add(this.scoreText);
 
     // Se agranda en pantallas pequeñas (1 en escritorio); los efectos animan solo el texto
-    this.setScale(getLayout(scene).hudScale);
+    const hudScale = getLayout(scene).hudScale;
+    this.setScale(hudScale);
+    this.scoreText.setResolution(hudScale);
 
     // Añadir a la escena
     scene.add.existing(this);

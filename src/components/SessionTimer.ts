@@ -36,6 +36,7 @@ export class SessionTimer {
 
     // Se agranda en pantallas pequeñas (1 en escritorio)
     this.timerText.setScale(hudScale);
+    this.timerText.setResolution(hudScale);
   }
 
   /**

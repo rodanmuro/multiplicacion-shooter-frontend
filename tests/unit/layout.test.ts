@@ -9,6 +9,7 @@ describe('computeLayout', () => {
       hudScale: 1,
       hitSlop: 0,
       crosshairScale: 1,
+      maxCardsFactor: 1,
     });
   });
 
@@ -21,13 +22,14 @@ describe('computeLayout', () => {
       const { cardScale } = computeLayout(s);
       const screenHeight = 80 * cardScale * s;
       // Si no se alcanza es porque se topó con el máximo permitido
-      if (cardScale < 1.6) expect(screenHeight).toBeGreaterThanOrEqual(MIN_CARD_SCREEN_HEIGHT - 0.001);
+      if (cardScale < 1.35) expect(screenHeight).toBeGreaterThanOrEqual(MIN_CARD_SCREEN_HEIGHT - 0.001);
     }
   });
 
   it('a escala de celular (≈ 0,49) las tarjetas, el HUD y la tolerancia crecen', () => {
     const l = computeLayout(0.49);
     expect(l.cardScale).toBeGreaterThan(1.3);
+    expect(l.maxCardsFactor).toBeLessThan(0.7);
     expect(l.hudScale).toBeGreaterThan(1.3);
     expect(l.hitSlop).toBeGreaterThan(20);
     expect(l.crosshairScale).toBeGreaterThan(1.5);
@@ -45,7 +47,8 @@ describe('computeLayout', () => {
 
   it('respeta los topes aunque la pantalla sea diminuta', () => {
     const l = computeLayout(0.05);
-    expect(l.cardScale).toBeLessThanOrEqual(1.6);
+    expect(l.cardScale).toBeLessThanOrEqual(1.35);
+    expect(l.maxCardsFactor).toBeGreaterThanOrEqual(0.6);
     expect(l.hudScale).toBeLessThanOrEqual(1.6);
     expect(l.crosshairScale).toBeLessThanOrEqual(1.8);
     expect(Number.isFinite(l.hitSlop)).toBe(true);
