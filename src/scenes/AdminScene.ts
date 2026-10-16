@@ -8,6 +8,7 @@ import type {
   AdminSessionsFilterParams,
   PaginationInfoExtended,
 } from '../types/api';
+import { FONT_SIZE, COLOR } from '../ui/theme';
 
 /**
  * Escena de administración mejorada
@@ -58,8 +59,8 @@ export default class AdminScene extends Phaser.Scene {
     // Título
     this.add
       .text(centerX, 25, 'PANEL DE ADMINISTRACIÓN', {
-        fontSize: '28px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.yellow,
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
@@ -126,7 +127,7 @@ export default class AdminScene extends Phaser.Scene {
     this.createButton(width - 180, 25, '📄 Cargar CSV', () => this.openCsvUpload(), '#0066cc');
 
     // Botón exportar
-    this.createButton(width - 340, 25, '📥 Exportar', () => this.exportUsers(), '#006633');
+    this.createButton(width - 340, 25, '📥 Exportar', () => this.exportUsers(), COLOR.successDark);
 
     // Crear filtros HTML
     this.createUsersFilterBar();
@@ -138,8 +139,8 @@ export default class AdminScene extends Phaser.Scene {
       const total = this.usersPagination.total;
       this.add
         .text(100, 155, `Mostrando ${from}-${to} de ${total} usuarios`, {
-          fontSize: '16px',
-          color: '#aaaaaa',
+          fontSize: FONT_SIZE.sm,
+          color: COLOR.grayLight,
         })
         .setData('clearable', true);
     }
@@ -380,36 +381,36 @@ export default class AdminScene extends Phaser.Scene {
     rowBg.on('pointerout', () => rowBg.setFillStyle(0x16213e));
 
     // Número de fila
-    this.createText(positions[0], rowY, rowNumber.toString(), '#888888');
+    this.createText(positions[0], rowY, rowNumber.toString(), COLOR.grayMid);
 
     // Email (truncado)
     const emailDisplay = user.email.length > 28 ? user.email.substring(0, 25) + '...' : user.email;
-    this.createText(positions[1], rowY, emailDisplay, '#ffffff');
+    this.createText(positions[1], rowY, emailDisplay, COLOR.white);
 
     // Nombre
     const fullName = `${user.name || ''} ${user.lastname || ''}`.trim() || '-';
     const nameDisplay = fullName.length > 18 ? fullName.substring(0, 15) + '...' : fullName;
-    this.createText(positions[2], rowY, nameDisplay, '#ffffff');
+    this.createText(positions[2], rowY, nameDisplay, COLOR.white);
 
     // Grupo
-    this.createText(positions[3], rowY, user.group || '-', '#aaaaaa');
+    this.createText(positions[3], rowY, user.group || '-', COLOR.grayLight);
 
     // Sesiones
-    this.createText(positions[4], rowY, user.game_sessions_count.toString(), '#95e1d3');
+    this.createText(positions[4], rowY, user.game_sessions_count.toString(), COLOR.mint);
 
     // Promedio
     const avgScore = user.avg_score !== null && user.avg_score !== undefined ? Number(user.avg_score).toFixed(1) : '-';
-    this.createText(positions[5], rowY, avgScore, '#4ecdc4');
+    this.createText(positions[5], rowY, avgScore, COLOR.teal);
 
     // Mejor
     const bestScore = user.best_score !== null ? user.best_score.toString() : '-';
-    this.createText(positions[6], rowY, bestScore, '#ffff00');
+    this.createText(positions[6], rowY, bestScore, COLOR.yellow);
 
     // Última sesión
     const lastPlayed = user.last_played_at
       ? new Date(user.last_played_at).toLocaleDateString()
       : '-';
-    this.createText(positions[7], rowY, lastPlayed, '#aaaaaa');
+    this.createText(positions[7], rowY, lastPlayed, COLOR.grayLight);
   }
 
   /**
@@ -453,14 +454,14 @@ export default class AdminScene extends Phaser.Scene {
     });
 
     // Botón exportar sesiones
-    this.createButton(width - 180, 40, '📥 Exportar', () => this.exportUserSessions(), '#006633');
+    this.createButton(width - 180, 40, '📥 Exportar', () => this.exportUserSessions(), COLOR.successDark);
 
     // Info del usuario
     const userName = `${this.selectedUser.name || ''} ${this.selectedUser.lastname || ''}`.trim();
     this.add
       .text(centerX, 80, userName || this.selectedUser.email, {
-        fontSize: '28px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.white,
         fontStyle: 'bold',
       })
       .setOrigin(0.5)
@@ -471,7 +472,7 @@ export default class AdminScene extends Phaser.Scene {
         centerX,
         110,
         `${this.selectedUser.email} | Grupo: ${this.selectedUser.group || 'N/A'}`,
-        { fontSize: '16px', color: '#aaaaaa' }
+        { fontSize: FONT_SIZE.sm, color: COLOR.grayLight }
       )
       .setOrigin(0.5)
       .setData('clearable', true);
@@ -491,8 +492,8 @@ export default class AdminScene extends Phaser.Scene {
       const total = this.sessionsPagination.total;
       this.add
         .text(100, 220, `Mostrando ${from}-${to} de ${total} sesiones`, {
-          fontSize: '16px',
-          color: '#aaaaaa',
+          fontSize: FONT_SIZE.sm,
+          color: COLOR.grayLight,
         })
         .setData('clearable', true);
     }
@@ -541,8 +542,8 @@ export default class AdminScene extends Phaser.Scene {
 
     this.add
       .text(centerX, y, summaryText, {
-        fontSize: '14px',
-        color: '#4ecdc4',
+        fontSize: FONT_SIZE.xs,
+        color: COLOR.teal,
       })
       .setOrigin(0.5)
       .setData('clearable', true);
@@ -672,29 +673,29 @@ export default class AdminScene extends Phaser.Scene {
       .setData('clearable', true);
 
     // Número de fila
-    this.createText(positions[0], rowY, session.row_number.toString(), '#888888');
+    this.createText(positions[0], rowY, session.row_number.toString(), COLOR.grayMid);
 
     // Fecha
     const date = new Date(session.started_at);
-    this.createText(positions[1], rowY, date.toLocaleDateString(), '#ffffff');
+    this.createText(positions[1], rowY, date.toLocaleDateString(), COLOR.white);
 
     // Hora
-    this.createText(positions[2], rowY, date.toLocaleTimeString().substring(0, 5), '#aaaaaa');
+    this.createText(positions[2], rowY, date.toLocaleTimeString().substring(0, 5), COLOR.grayLight);
 
     // Puntuación
-    this.createText(positions[3], rowY, session.final_score.toString(), '#95e1d3');
+    this.createText(positions[3], rowY, session.final_score.toString(), COLOR.mint);
 
     // Nivel
-    this.createText(positions[4], rowY, session.max_level_reached.toString(), '#ffffff');
+    this.createText(positions[4], rowY, session.max_level_reached.toString(), COLOR.white);
 
     // Disparos
-    this.createText(positions[5], rowY, session.total_shots.toString(), '#ffffff');
+    this.createText(positions[5], rowY, session.total_shots.toString(), COLOR.white);
 
     // Aciertos
-    this.createText(positions[6], rowY, session.correct_shots.toString(), '#4ecdc4');
+    this.createText(positions[6], rowY, session.correct_shots.toString(), COLOR.teal);
 
     // Precisión
-    const accuracyColor = session.accuracy >= 80 ? '#00ff00' : session.accuracy >= 60 ? '#ffaa00' : '#ff6666';
+    const accuracyColor = session.accuracy >= 80 ? COLOR.green : session.accuracy >= 60 ? COLOR.amber : COLOR.dangerHoverSoft;
     this.createText(positions[7], rowY, `${session.accuracy}%`, accuracyColor);
   }
 
@@ -722,8 +723,8 @@ export default class AdminScene extends Phaser.Scene {
 
       const headerText = this.add
         .text(positions[index], y, header.label + sortIndicator, {
-          fontSize: '15px',
-          color: header.field ? '#ffff00' : '#cccc00',
+          fontSize: FONT_SIZE.xsPlus,
+          color: header.field ? COLOR.yellow : '#cccc00',
           fontStyle: 'bold',
         })
         .setOrigin(0, 0.5)
@@ -749,8 +750,8 @@ export default class AdminScene extends Phaser.Scene {
           this.loadUsers();
         });
 
-        headerText.on('pointerover', () => headerText.setColor('#ffffff'));
-        headerText.on('pointerout', () => headerText.setColor('#ffff00'));
+        headerText.on('pointerover', () => headerText.setColor(COLOR.white));
+        headerText.on('pointerout', () => headerText.setColor(COLOR.yellow));
       }
     });
   }
@@ -773,8 +774,8 @@ export default class AdminScene extends Phaser.Scene {
     headers.forEach((header, index) => {
       this.add
         .text(positions[index], y, header, {
-          fontSize: '15px',
-          color: '#ffff00',
+          fontSize: FONT_SIZE.xsPlus,
+          color: COLOR.yellow,
           fontStyle: 'bold',
         })
         .setOrigin(0, 0.5)
@@ -798,19 +799,19 @@ export default class AdminScene extends Phaser.Scene {
     const lastPage = pagination.last_page;
 
     if (currentPage > 1) {
-      this.createButton(centerX - 150, y, '← Anterior', () => onChange(currentPage - 1), '#333333');
+      this.createButton(centerX - 150, y, '← Anterior', () => onChange(currentPage - 1), COLOR.grayDark);
     }
 
     this.add
       .text(centerX, y, `Página ${currentPage} de ${lastPage}`, {
-        fontSize: '18px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.md,
+        color: COLOR.white,
       })
       .setOrigin(0.5)
       .setData('clearable', true);
 
     if (currentPage < lastPage) {
-      this.createButton(centerX + 150, y, 'Siguiente →', () => onChange(currentPage + 1), '#333333');
+      this.createButton(centerX + 150, y, 'Siguiente →', () => onChange(currentPage + 1), COLOR.grayDark);
     }
   }
 
@@ -822,12 +823,12 @@ export default class AdminScene extends Phaser.Scene {
     y: number,
     text: string,
     onClick: () => void,
-    bgColor: string = '#333333'
+    bgColor: string = COLOR.grayDark
   ): Phaser.GameObjects.Text {
     const btn = this.add
       .text(x, y, text, {
-        fontSize: '16px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.sm,
+        color: COLOR.white,
         backgroundColor: bgColor,
         padding: { x: 12, y: 8 },
       })
@@ -847,7 +848,7 @@ export default class AdminScene extends Phaser.Scene {
    */
   private createText(x: number, y: number, text: string, color: string): void {
     this.add
-      .text(x, y, text, { fontSize: '14px', color })
+      .text(x, y, text, { fontSize: FONT_SIZE.xs, color })
       .setOrigin(0, 0.5)
       .setData('clearable', true);
   }
@@ -972,8 +973,8 @@ export default class AdminScene extends Phaser.Scene {
 
     this.add
       .text(centerX, centerY - 40, 'ERROR', {
-        fontSize: '28px',
-        color: '#ff0000',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.red,
         fontStyle: 'bold',
       })
       .setOrigin(0.5)
@@ -981,8 +982,8 @@ export default class AdminScene extends Phaser.Scene {
 
     this.add
       .text(centerX, centerY + 10, message, {
-        fontSize: '16px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.sm,
+        color: COLOR.white,
         align: 'center',
         wordWrap: { width: 450 },
       })

@@ -16,6 +16,7 @@ import { GAME_CONFIG } from '../utils/constants';
 import { sessionApiService } from '../services/sessionApiService';
 import { shotApiService } from '../services/shotApiService';
 import type { RecordShotPayload, FinishedSessionData } from '../types/api';
+import { FONT_SIZE, COLOR } from '../ui/theme';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -56,8 +57,8 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY,
       'Multiplication Shooter\nGame Scene Active',
       {
-        fontSize: '32px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.title,
+        color: COLOR.white,
         align: 'center'
       }
     ).setOrigin(0.5);
@@ -262,10 +263,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY - 100,
       `¡NIVEL ${newLevel}!\nTabla del ${currentTable}`,
       {
-        fontSize: '56px',
-        color: '#00ff00',
+        fontSize: FONT_SIZE.splash,
+        color: COLOR.green,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 8,
         align: 'center'
       }
@@ -387,10 +388,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY - 150,
       '¡SESIÓN COMPLETADA!',
       {
-        fontSize: '64px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.hero,
+        color: COLOR.yellow,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 8
       }
     );
@@ -408,8 +409,8 @@ export class GameScene extends Phaser.Scene {
       `Última Tabla: Tabla del ${info.table}\n` +
       `Tiempo Jugado: ${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`,
       {
-        fontSize: '32px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.title,
+        color: COLOR.white,
         fontStyle: 'bold',
         align: 'center',
         lineSpacing: 10
@@ -423,8 +424,8 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY + 150,
       'Haz clic para nueva sesión',
       {
-        fontSize: '28px',
-        color: '#00ff00',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.green,
         fontStyle: 'italic'
       }
     );
@@ -467,10 +468,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY - 150,
       '¡SESIÓN COMPLETADA!',
       {
-        fontSize: '64px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.hero,
+        color: COLOR.yellow,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 8
       }
     );
@@ -490,8 +491,8 @@ export class GameScene extends Phaser.Scene {
       `Precisión: ${session.accuracy}%\n` +
       `Tiempo Jugado: ${minutes}:${seconds.toString().padStart(2, '0')}`,
       {
-        fontSize: '32px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.title,
+        color: COLOR.white,
         fontStyle: 'bold',
         align: 'center',
         lineSpacing: 10
@@ -505,8 +506,8 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY + 150,
       'Haz clic para nueva sesión',
       {
-        fontSize: '28px',
-        color: '#00ff00',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.green,
         fontStyle: 'italic'
       }
     );
@@ -544,10 +545,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY - 60,
       '¿Seguro que deseas iniciar\nuna nueva sesión?',
       {
-        fontSize: '48px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.display,
+        color: COLOR.yellow,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 6,
         align: 'center'
       }
@@ -561,10 +562,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY + 80,
       'SÍ',
       {
-        fontSize: '42px',
-        color: '#00ff00',
+        fontSize: FONT_SIZE.h1,
+        color: COLOR.green,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 4,
         backgroundColor: '#004400',
         padding: { x: 30, y: 15 }
@@ -580,10 +581,10 @@ export class GameScene extends Phaser.Scene {
       this.cameras.main.centerY + 80,
       'NO',
       {
-        fontSize: '42px',
-        color: '#ff0000',
+        fontSize: FONT_SIZE.h1,
+        color: COLOR.red,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 4,
         backgroundColor: '#440000',
         padding: { x: 30, y: 15 }

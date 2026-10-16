@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Question } from '../types';
 import { UI_CONFIG } from '../utils/constants';
+import { COLOR } from '../ui/theme';
 
 /**
  * Componente UI para mostrar la pregunta de multiplicación
@@ -84,7 +85,7 @@ export class QuestionDisplay extends Phaser.GameObjects.Container {
       yoyo: true,
       repeat: 2,
       onStart: () => {
-        this.questionText.setColor('#00ff00');
+        this.questionText.setColor(COLOR.green);
       },
       onComplete: () => {
         this.questionText.setColor(UI_CONFIG.QUESTION_COLOR);
@@ -106,7 +107,7 @@ export class QuestionDisplay extends Phaser.GameObjects.Container {
       yoyo: true,
       repeat: 3,
       onStart: () => {
-        this.questionText.setColor('#ff0000');
+        this.questionText.setColor(COLOR.red);
       },
       onComplete: () => {
         this.x = originalX;

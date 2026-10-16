@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { GoogleUser } from '../types/auth';
 import { AuthManager } from '../managers/AuthManager';
+import { FONT_SIZE, COLOR } from '../ui/theme';
 
 /**
  * Muestra la información del usuario autenticado en la esquina superior derecha
@@ -45,8 +46,8 @@ export class UserDisplay {
 
     // Texto con el primer nombre del usuario
     this.nameText = this.scene.add.text(-55, 25, firstName, {
-      fontSize: '18px',
-      color: '#ffffff',
+      fontSize: FONT_SIZE.md,
+      color: COLOR.white,
       fontStyle: 'bold',
       backgroundColor: '#00000088',
       padding: { x: 8, y: 4 }
@@ -55,9 +56,9 @@ export class UserDisplay {
 
     // Crear botón de logout
     this.logoutButton = this.scene.add.text(-60, 55, 'Salir', {
-      fontSize: '14px',
-      color: '#ffffff',
-      backgroundColor: '#ff4444',
+      fontSize: FONT_SIZE.xs,
+      color: COLOR.white,
+      backgroundColor: COLOR.dangerHover,
       padding: { x: 8, y: 4 }
     });
     this.logoutButton.setOrigin(1, 0.5);
@@ -65,11 +66,11 @@ export class UserDisplay {
 
     // Efectos hover en el botón
     this.logoutButton.on('pointerover', () => {
-      this.logoutButton.setStyle({ backgroundColor: '#ff6666' });
+      this.logoutButton.setStyle({ backgroundColor: COLOR.dangerHoverSoft });
     });
 
     this.logoutButton.on('pointerout', () => {
-      this.logoutButton.setStyle({ backgroundColor: '#ff4444' });
+      this.logoutButton.setStyle({ backgroundColor: COLOR.dangerHover });
     });
 
     // Acción de logout
@@ -159,8 +160,8 @@ export class UserDisplay {
     const initials = this.getInitials(fullName);
 
     this.avatarText = this.scene.add.text(-25, 25, initials, {
-      fontSize: '18px',
-      color: '#ffffff',
+      fontSize: FONT_SIZE.md,
+      color: COLOR.white,
       fontStyle: 'bold'
     });
     this.avatarText.setOrigin(0.5);

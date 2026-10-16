@@ -4,13 +4,14 @@ import { LoginScene } from '../scenes/LoginScene';
 import { GameScene } from '../scenes/GameScene';
 import { StatsScene } from '../scenes/StatsScene';
 import AdminScene from '../scenes/AdminScene';
+import { COLOR } from '../ui/theme';
 
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: 1200,
   height: 800,
   parent: 'app',
-  backgroundColor: '#1a1a2e',
+  backgroundColor: COLOR.navy,
   physics: {
     default: 'arcade',
     arcade: {

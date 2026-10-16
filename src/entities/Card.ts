@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { CARD_CONFIG } from '../utils/constants';
 import { CardExplosion } from '../effects/CardExplosion';
+import { FONT_SIZE, COLOR } from '../ui/theme';
 
 /**
  * Tarjeta con un número que se mueve por la pantalla
@@ -35,8 +36,8 @@ export class Card extends Phaser.GameObjects.Container {
 
     // Texto del número
     this.numberText = scene.add.text(0, 0, value.toString(), {
-      fontSize: '36px',
-      color: '#ffffff',
+      fontSize: FONT_SIZE.h2,
+      color: COLOR.white,
       fontStyle: 'bold',
       align: 'center'
     });

@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { UI_CONFIG, GAME_CONFIG } from '../utils/constants';
+import { COLOR } from '../ui/theme';
 
 /**
  * Componente UI para mostrar el tiempo restante de la pregunta actual
@@ -21,9 +22,9 @@ export class QuestionTimer extends Phaser.GameObjects.Container {
     // Texto del temporizador
     this.timerText = scene.add.text(0, 30, '00:00', {
       fontSize: UI_CONFIG.TIMER_FONT_SIZE,
-      color: '#ffffff',
+      color: COLOR.white,
       fontStyle: 'bold',
-      stroke: '#000000',
+      stroke: COLOR.black,
       strokeThickness: 4
     });
     this.timerText.setOrigin(0.5);
@@ -92,7 +93,7 @@ export class QuestionTimer extends Phaser.GameObjects.Container {
 
     // Cambiar color según tiempo restante
     if (seconds <= 5) {
-      this.timerText.setColor('#ff0000');
+      this.timerText.setColor(COLOR.red);
       // Parpadeo cuando quedan 5 segundos
       if (seconds <= 5 && Math.floor(this.timeRemaining / 500) % 2 === 0) {
         this.timerText.setScale(1.2);
@@ -100,10 +101,10 @@ export class QuestionTimer extends Phaser.GameObjects.Container {
         this.timerText.setScale(1.0);
       }
     } else if (seconds <= 10) {
-      this.timerText.setColor('#ffaa00');
+      this.timerText.setColor(COLOR.amber);
       this.timerText.setScale(1.0);
     } else {
-      this.timerText.setColor('#ffffff');
+      this.timerText.setColor(COLOR.white);
       this.timerText.setScale(1.0);
     }
 

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { sessionApiService } from '../services/sessionApiService';
 import type { SessionListItem, SessionDetail } from '../types/api';
+import { FONT_SIZE, COLOR } from '../ui/theme';
 
 /**
  * Escena de estadísticas - Muestra historial de sesiones del usuario
@@ -27,7 +28,7 @@ export class StatsScene extends Phaser.Scene {
     this.input.setDefaultCursor('default');
 
     // Fondo
-    this.cameras.main.setBackgroundColor('#1a1a2e');
+    this.cameras.main.setBackgroundColor(COLOR.navy);
 
     // Título
     const title = this.add.text(
@@ -35,10 +36,10 @@ export class StatsScene extends Phaser.Scene {
       40,
       'HISTORIAL DE SESIONES',
       {
-        fontSize: '48px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.display,
+        color: COLOR.yellow,
         fontStyle: 'bold',
-        stroke: '#000000',
+        stroke: COLOR.black,
         strokeThickness: 6,
         align: 'center'
       }
@@ -51,9 +52,9 @@ export class StatsScene extends Phaser.Scene {
       40,
       '← Volver',
       {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#4a5568',
+        fontSize: FONT_SIZE.xl,
+        color: COLOR.white,
+        backgroundColor: COLOR.slateBtn,
         padding: { x: 15, y: 10 }
       }
     );
@@ -61,7 +62,7 @@ export class StatsScene extends Phaser.Scene {
     backButton.setInteractive({ useHandCursor: true });
     backButton.on('pointerdown', () => this.goBackToGame());
     backButton.on('pointerover', () => backButton.setStyle({ backgroundColor: '#2d3748' }));
-    backButton.on('pointerout', () => backButton.setStyle({ backgroundColor: '#4a5568' }));
+    backButton.on('pointerout', () => backButton.setStyle({ backgroundColor: COLOR.slateBtn }));
 
     // Texto de carga
     this.loadingText = this.add.text(
@@ -69,8 +70,8 @@ export class StatsScene extends Phaser.Scene {
       this.cameras.main.centerY,
       'Cargando sesiones...',
       {
-        fontSize: '32px',
-        color: '#ffffff'
+        fontSize: FONT_SIZE.title,
+        color: COLOR.white
       }
     );
     this.loadingText.setOrigin(0.5);
@@ -107,7 +108,7 @@ export class StatsScene extends Phaser.Scene {
     } catch (error) {
       console.error('Error al cargar sesiones:', error);
       this.loadingText.setText('Error al cargar sesiones. Intenta de nuevo.');
-      this.loadingText.setColor('#ff0000');
+      this.loadingText.setColor(COLOR.red);
     }
   }
 
@@ -212,8 +213,8 @@ export class StatsScene extends Phaser.Scene {
         this.cameras.main.centerY,
         'No tienes sesiones de juego todavía.\n¡Juega una partida para ver tus estadísticas!',
         {
-          fontSize: '24px',
-          color: '#ffffff',
+          fontSize: FONT_SIZE.xl,
+          color: COLOR.white,
           align: 'center'
         }
       );
@@ -273,8 +274,8 @@ export class StatsScene extends Phaser.Scene {
         headerY,
         header.text,
         {
-          fontSize: '16px',
-          color: '#ffff00',
+          fontSize: FONT_SIZE.sm,
+          color: COLOR.yellow,
           fontStyle: 'bold'
         }
       );
@@ -313,8 +314,8 @@ export class StatsScene extends Phaser.Scene {
       y,
       `${dateStr} ${timeStr}`,
       {
-        fontSize: '18px',
-        color: '#ffffff'
+        fontSize: FONT_SIZE.md,
+        color: COLOR.white
       }
     );
     dateText.setOrigin(0, 0.5);
@@ -326,8 +327,8 @@ export class StatsScene extends Phaser.Scene {
       y,
       `${session.final_score} pts`,
       {
-        fontSize: '22px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.lgPlus,
+        color: COLOR.yellow,
         fontStyle: 'bold'
       }
     );
@@ -340,21 +341,21 @@ export class StatsScene extends Phaser.Scene {
       y,
       `Nivel ${session.max_level_reached}`,
       {
-        fontSize: '18px',
-        color: '#00ff00'
+        fontSize: FONT_SIZE.md,
+        color: COLOR.green
       }
     );
     levelText.setOrigin(0, 0.5);
     container.add(levelText);
 
     // Precisión
-    const accuracyColor = session.accuracy >= 70 ? '#00ff00' : '#ff9900';
+    const accuracyColor = session.accuracy >= 70 ? COLOR.green : '#ff9900';
     const accuracyText = this.add.text(
       centerX + 50,
       y,
       `${session.accuracy.toFixed(1)}%`,
       {
-        fontSize: '18px',
+        fontSize: FONT_SIZE.md,
         color: accuracyColor
       }
     );
@@ -367,8 +368,8 @@ export class StatsScene extends Phaser.Scene {
       y,
       `${session.correct_shots}/${session.total_shots}`,
       {
-        fontSize: '18px',
-        color: '#ffffff'
+        fontSize: FONT_SIZE.md,
+        color: COLOR.white
       }
     );
     shotsText.setOrigin(0, 0.5);
@@ -380,8 +381,8 @@ export class StatsScene extends Phaser.Scene {
       y,
       'Ver detalle',
       {
-        fontSize: '16px',
-        color: '#ffffff',
+        fontSize: FONT_SIZE.sm,
+        color: COLOR.white,
         backgroundColor: '#4299e1',
         padding: { x: 10, y: 5 }
       }
@@ -420,9 +421,9 @@ export class StatsScene extends Phaser.Scene {
         y,
         '← Anterior',
         {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#4a5568',
+          fontSize: FONT_SIZE.lg,
+          color: COLOR.white,
+          backgroundColor: COLOR.slateBtn,
           padding: { x: 15, y: 8 }
         }
       );
@@ -438,8 +439,8 @@ export class StatsScene extends Phaser.Scene {
       y,
       `${this.currentPage} / ${this.totalPages}`,
       {
-        fontSize: '20px',
-        color: '#ffffff'
+        fontSize: FONT_SIZE.lg,
+        color: COLOR.white
       }
     );
     pageText.setOrigin(0.5);
@@ -452,9 +453,9 @@ export class StatsScene extends Phaser.Scene {
         y,
         'Siguiente →',
         {
-          fontSize: '20px',
-          color: '#ffffff',
-          backgroundColor: '#4a5568',
+          fontSize: FONT_SIZE.lg,
+          color: COLOR.white,
+          backgroundColor: COLOR.slateBtn,
           padding: { x: 15, y: 8 }
         }
       );
@@ -532,8 +533,8 @@ export class StatsScene extends Phaser.Scene {
       this.cameras.main.centerY - 260,
       `Sesión del ${dateStr}`,
       {
-        fontSize: '28px',
-        color: '#ffff00',
+        fontSize: FONT_SIZE.xxl,
+        color: COLOR.yellow,
         fontStyle: 'bold'
       }
     );
@@ -558,8 +559,8 @@ export class StatsScene extends Phaser.Scene {
         statsY + (index * 30),
         stat,
         {
-          fontSize: '20px',
-          color: '#ffffff'
+          fontSize: FONT_SIZE.lg,
+          color: COLOR.white
         }
       );
       this.detailModal.add(statText);
@@ -571,8 +572,8 @@ export class StatsScene extends Phaser.Scene {
       this.cameras.main.centerY + 30,
       `Total de disparos: ${detail.shots.length}`,
       {
-        fontSize: '18px',
-        color: '#00ff00'
+        fontSize: FONT_SIZE.md,
+        color: COLOR.green
       }
     );
     shotsTitle.setOrigin(0.5);
@@ -584,9 +585,9 @@ export class StatsScene extends Phaser.Scene {
       this.cameras.main.centerY + 250,
       'Cerrar',
       {
-        fontSize: '24px',
-        color: '#ffffff',
-        backgroundColor: '#e53e3e',
+        fontSize: FONT_SIZE.xl,
+        color: COLOR.white,
+        backgroundColor: COLOR.dangerBtn,
         padding: { x: 30, y: 12 }
       }
     );
@@ -594,7 +595,7 @@ export class StatsScene extends Phaser.Scene {
     closeBtn.setInteractive({ useHandCursor: true });
     closeBtn.on('pointerdown', () => this.closeDetailModal());
     closeBtn.on('pointerover', () => closeBtn.setStyle({ backgroundColor: '#c53030' }));
-    closeBtn.on('pointerout', () => closeBtn.setStyle({ backgroundColor: '#e53e3e' }));
+    closeBtn.on('pointerout', () => closeBtn.setStyle({ backgroundColor: COLOR.dangerBtn }));
     this.detailModal.add(closeBtn);
   }
 
