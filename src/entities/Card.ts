@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { CARD_CONFIG } from '../utils/constants';
 import { CardExplosion } from '../effects/CardExplosion';
 import { FONT_SIZE, COLOR } from '../ui/theme';
+import { getLayout } from '../ui/layout';
 
 /**
  * Tarjeta con un número que se mueve por la pantalla
@@ -51,6 +52,9 @@ export class Card extends Phaser.GameObjects.Container {
 
     // Profundidad para que esté debajo de la mira
     this.setDepth(50);
+
+    // En pantallas pequeñas la tarjeta se agranda para seguir siendo tocable (1 en escritorio)
+    this.setScale(getLayout(scene).cardScale);
 
     // Hacer la tarjeta interactiva con área de hit explícita
     this.setSize(CARD_CONFIG.CARD_WIDTH, CARD_CONFIG.CARD_HEIGHT);

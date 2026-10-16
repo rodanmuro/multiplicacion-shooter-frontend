@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { Card } from '../entities/Card';
 import type { Question } from '../types';
 import { CARD_CONFIG } from '../utils/constants';
+import { getLayout } from '../ui/layout';
 import { generateWrongAnswers, shuffleArray, randomInt } from '../utils/mathHelpers';
 
 /**
@@ -220,10 +221,13 @@ export class CardSpawner {
    * Verifica si un punto colisiona con alguna tarjeta
    */
   public checkHit(x: number, y: number): Card | null {
+    // Margen extra de impacto cuando el canvas se muestra reducido (0 en escritorio)
+    const slop = getLayout(this.scene).hitSlop;
+
     for (const card of this.cards) {
-      // Calcular área de colisión manual basada en el tamaño de la tarjeta
-      const halfWidth = CARD_CONFIG.CARD_WIDTH / 2;
-      const halfHeight = CARD_CONFIG.CARD_HEIGHT / 2;
+      // Calcular área de colisión manual basada en el tamaño (escalado) de la tarjeta
+      const halfWidth = (CARD_CONFIG.CARD_WIDTH * card.scaleX) / 2 + slop;
+      const halfHeight = (CARD_CONFIG.CARD_HEIGHT * card.scaleY) / 2 + slop;
 
       const left = card.x - halfWidth;
       const right = card.x + halfWidth;

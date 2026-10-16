@@ -25,6 +25,8 @@ a:hover {
 html,
 body {
   height: 100%;
+  /* Mismo color que el fondo del juego: las franjas del lienzo reducido no se ven como un marco blanco */
+  background-color: #1a1a2e;
 }
 
 body {
