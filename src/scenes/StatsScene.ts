@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { sessionApiService } from '../services/sessionApiService';
 import type { SessionListItem, SessionDetail } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
+import { formatDate, formatDateTime, formatDurationMMSS, formatTime } from '../utils/format';
 
 /**
  * Escena de estadísticas - Muestra historial de sesiones del usuario
@@ -298,16 +299,8 @@ export class StatsScene extends Phaser.Scene {
     container.add(bg);
 
     // Fecha y hora
-    const date = new Date(session.started_at);
-    const dateStr = date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-    const timeStr = date.toLocaleTimeString('es-ES', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const dateStr = formatDate(session.started_at);
+    const timeStr = formatTime(session.started_at);
 
     const dateText = this.add.text(
       centerX - 480,
@@ -519,14 +512,7 @@ export class StatsScene extends Phaser.Scene {
     this.detailModal.add(modalBg);
 
     // Título del modal
-    const date = new Date(detail.session.started_at);
-    const dateStr = date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    const dateStr = formatDateTime(detail.session.started_at);
 
     const modalTitle = this.add.text(
       this.cameras.main.centerX,
@@ -546,7 +532,7 @@ export class StatsScene extends Phaser.Scene {
     const stats = [
       `Puntaje Final: ${detail.session.final_score}`,
       `Nivel Máximo: ${detail.session.max_level_reached}`,
-      `Duración: ${this.formatDuration(detail.session.duration_seconds)}`,
+      `Duración: ${formatDurationMMSS(detail.session.duration_seconds)}`,
       `Disparos Totales: ${detail.session.total_shots}`,
       `Aciertos: ${detail.session.correct_shots}`,
       `Errores: ${detail.session.wrong_shots}`,
@@ -606,15 +592,6 @@ export class StatsScene extends Phaser.Scene {
     if (this.detailModal) {
       this.detailModal.destroy();
     }
-  }
-
-  /**
-   * Formatea la duración en formato MM:SS
-   */
-  private formatDuration(seconds: number): string {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
 
   /**

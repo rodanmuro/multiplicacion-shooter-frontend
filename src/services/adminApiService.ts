@@ -6,6 +6,7 @@ import type {
   AdminUsersFilterParams,
   AdminSessionsFilterParams,
 } from '../types/api';
+import { downloadBlob, filenameFromContentDisposition } from '../utils/download';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
@@ -173,23 +174,11 @@ class AdminApiService {
 
     // Descargar el archivo
     const blob = await response.blob();
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'usuarios.csv';
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="(.+)"/);
-      if (match) {
-        filename = match[1];
-      }
-    }
-
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const filename = filenameFromContentDisposition(
+      response.headers.get('Content-Disposition'),
+      'usuarios.csv'
+    );
+    downloadBlob(blob, filename);
   }
 
   /**
@@ -221,23 +210,11 @@ class AdminApiService {
 
     // Descargar el archivo
     const blob = await response.blob();
-    const contentDisposition = response.headers.get('Content-Disposition');
-    let filename = 'sesiones.csv';
-    if (contentDisposition) {
-      const match = contentDisposition.match(/filename="(.+)"/);
-      if (match) {
-        filename = match[1];
-      }
-    }
-
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const filename = filenameFromContentDisposition(
+      response.headers.get('Content-Disposition'),
+      'sesiones.csv'
+    );
+    downloadBlob(blob, filename);
   }
 }
 

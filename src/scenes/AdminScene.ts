@@ -9,6 +9,7 @@ import type {
   PaginationInfoExtended,
 } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
+import { formatDate, formatTime } from '../utils/format';
 
 /**
  * Escena de administración mejorada
@@ -408,7 +409,7 @@ export default class AdminScene extends Phaser.Scene {
 
     // Última sesión
     const lastPlayed = user.last_played_at
-      ? new Date(user.last_played_at).toLocaleDateString()
+      ? formatDate(user.last_played_at)
       : '-';
     this.createText(positions[7], rowY, lastPlayed, COLOR.grayLight);
   }
@@ -676,11 +677,10 @@ export default class AdminScene extends Phaser.Scene {
     this.createText(positions[0], rowY, session.row_number.toString(), COLOR.grayMid);
 
     // Fecha
-    const date = new Date(session.started_at);
-    this.createText(positions[1], rowY, date.toLocaleDateString(), COLOR.white);
+    this.createText(positions[1], rowY, formatDate(session.started_at), COLOR.white);
 
     // Hora
-    this.createText(positions[2], rowY, date.toLocaleTimeString().substring(0, 5), COLOR.grayLight);
+    this.createText(positions[2], rowY, formatTime(session.started_at), COLOR.grayLight);
 
     // Puntuación
     this.createText(positions[3], rowY, session.final_score.toString(), COLOR.mint);

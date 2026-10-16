@@ -104,7 +104,7 @@ describe('Panel de administración: sesiones de un usuario', () => {
       openUserSessions({ defaultSessions: [adminSessionRow(1, { final_score: 1850, max_level_reached: 5, total_shots: 50, correct_shots: 40, accuracy: 82 })] });
 
       expectSceneText('AdminScene', '1');
-      expectSceneText('AdminScene', /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/);
+      expectSceneText('AdminScene', /^\d{2}\/\d{2}\/\d{4}$/);
       expectSceneText('AdminScene', /^\d{2}:\d{2}$/);
       expectSceneText('AdminScene', '1850');
       expectSceneText('AdminScene', '5');

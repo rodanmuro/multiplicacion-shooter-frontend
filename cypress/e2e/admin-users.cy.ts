@@ -113,7 +113,7 @@ describe('Panel de administración: lista de usuarios', () => {
     it('la última sesión se muestra como fecha', () => {
       openAdmin({ users: adminUsers(1) });
 
-      expectSceneText('AdminScene', /^\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}$/);
+      expectSceneText('AdminScene', /^\d{2}\/\d{2}\/\d{4}$/);
     });
 
     it('trunca emails de más de 28 caracteres y nombres de más de 18', () => {

@@ -17,6 +17,7 @@ import { sessionApiService } from '../services/sessionApiService';
 import { shotApiService } from '../services/shotApiService';
 import type { RecordShotPayload, FinishedSessionData } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
+import { formatClock } from '../utils/format';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -398,16 +399,13 @@ export class GameScene extends Phaser.Scene {
     summaryText.setOrigin(0.5);
     summaryText.setDepth(3001);
 
-    const elapsedMinutes = Math.floor(info.elapsedTime / 60000);
-    const elapsedSeconds = Math.floor((info.elapsedTime % 60000) / 1000);
-
     const statsText = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY,
       `Puntuación Final: ${finalScore}\n` +
       `Nivel Alcanzado: ${info.level}\n` +
       `Última Tabla: Tabla del ${info.table}\n` +
-      `Tiempo Jugado: ${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`,
+      `Tiempo Jugado: ${formatClock(Math.floor(info.elapsedTime / 1000))}`,
       {
         fontSize: FONT_SIZE.title,
         color: COLOR.white,
@@ -478,9 +476,6 @@ export class GameScene extends Phaser.Scene {
     title.setOrigin(0.5);
     title.setDepth(3001);
 
-    const minutes = Math.floor(session.duration_seconds / 60);
-    const seconds = session.duration_seconds % 60;
-
     const stats = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY,
@@ -489,7 +484,7 @@ export class GameScene extends Phaser.Scene {
       `Disparos Totales: ${session.total_shots}\n` +
       `Aciertos: ${session.correct_shots} | Errores: ${session.wrong_shots}\n` +
       `Precisión: ${session.accuracy}%\n` +
-      `Tiempo Jugado: ${minutes}:${seconds.toString().padStart(2, '0')}`,
+      `Tiempo Jugado: ${formatClock(session.duration_seconds)}`,
       {
         fontSize: FONT_SIZE.title,
         color: COLOR.white,

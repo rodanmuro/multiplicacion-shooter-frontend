@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { UI_CONFIG, GAME_CONFIG } from '../utils/constants';
 import { COLOR } from '../ui/theme';
+import { formatDurationMMSS } from '../utils/format';
 
 /**
  * Componente UI para mostrar el tiempo restante de la pregunta actual
@@ -84,11 +85,9 @@ export class QuestionTimer extends Phaser.GameObjects.Container {
   private updateDisplay(): void {
     // Convertir milisegundos a segundos
     const seconds = Math.ceil(this.timeRemaining / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
 
     // Formatear tiempo como MM:SS
-    const timeString = `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    const timeString = formatDurationMMSS(seconds);
     this.timerText.setText(timeString);
 
     // Cambiar color según tiempo restante
