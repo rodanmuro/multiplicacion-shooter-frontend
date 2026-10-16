@@ -40,6 +40,13 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     console.log('GameScene: Game started!');
 
+    // scene.restart() y scene.start() reutilizan esta misma instancia: los campos de una partida
+    // anterior no se reinician solos. Sin esto, sessionEnded seguía en true y onShoot() descartaba
+    // todos los disparos, y sessionId / lastFinishedSessionData arrastraban datos de la partida previa.
+    this.sessionEnded = false;
+    this.sessionId = null;
+    this.lastFinishedSessionData = null;
+
     // Crear sesión en el backend (sin bloquear la inicialización)
     this.createGameSession();
 
@@ -86,6 +93,9 @@ export class GameScene extends Phaser.Scene {
     const authManager = AuthManager.getInstance();
     const user = authManager.getUser();
     if (user) {
+      // El menú vive en el DOM y la escena se vuelve a crear en cada partida: se retiran los
+      // manejadores del menú anterior para que no se acumulen sobre los mismos botones.
+      this.userMenu?.destroy();
       this.userMenu = new UserMenu();
       this.userMenu.setGameInstance(this.game);
       this.userMenu.show(user);
@@ -610,8 +620,10 @@ export class GameScene extends Phaser.Scene {
       yesButton.destroy();
       noButton.destroy();
 
-      // Recrear pantalla de resumen
-      this.showSessionSummary();
+      // Recrear pantalla de resumen en el fotograma siguiente: showSessionSummary() registra un
+      // input.once('pointerdown') y, si se hiciera aquí, este mismo click lo dispararía de inmediato
+      // y volvería a mostrar la confirmación.
+      this.time.delayedCall(0, () => this.showSessionSummary());
     });
   }
 }

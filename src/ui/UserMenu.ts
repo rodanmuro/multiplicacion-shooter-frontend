@@ -38,29 +38,56 @@ export class UserMenu {
     }
 
     // Configurar eventos
-    this.menuToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.toggleMenu();
-    });
-    this.adminButton.addEventListener('click', () => {
-      this.closeMenu();
-      this.handleAdmin();
-    });
-    this.statsButton.addEventListener('click', () => {
-      this.closeMenu();
-      this.handleStats();
-    });
-    this.logoutButton.addEventListener('click', () => {
-      this.closeMenu();
-      this.handleLogout();
-    });
+    this.menuToggle.addEventListener('click', this.onToggleClick);
+    this.adminButton.addEventListener('click', this.onAdminClick);
+    this.statsButton.addEventListener('click', this.onStatsClick);
+    this.logoutButton.addEventListener('click', this.onLogoutClick);
 
     // Cerrar menú al hacer click fuera
-    document.addEventListener('click', (e) => {
-      if (this.isMenuOpen && !this.userMenuElement.contains(e.target as Node)) {
-        this.closeMenu();
-      }
-    });
+    document.addEventListener('click', this.onDocumentClick);
+  }
+
+  // Manejadores como propiedades para poder quitarlos en destroy()
+  private onToggleClick = (e: Event): void => {
+    e.stopPropagation();
+    this.toggleMenu();
+  };
+
+  private onAdminClick = (): void => {
+    this.closeMenu();
+    this.handleAdmin();
+  };
+
+  private onStatsClick = (): void => {
+    this.closeMenu();
+    this.handleStats();
+  };
+
+  private onLogoutClick = (): void => {
+    this.closeMenu();
+    this.handleLogout();
+  };
+
+  private onDocumentClick = (e: Event): void => {
+    if (this.isMenuOpen && !this.userMenuElement.contains(e.target as Node)) {
+      this.closeMenu();
+    }
+  };
+
+  /**
+   * Quita los manejadores de eventos y deja el menú cerrado.
+   * Los elementos del DOM son los mismos en cada partida, así que una instancia nueva
+   * debe retirar antes los manejadores de la anterior.
+   */
+  public destroy(): void {
+    this.menuToggle?.removeEventListener('click', this.onToggleClick);
+    this.adminButton?.removeEventListener('click', this.onAdminClick);
+    this.statsButton?.removeEventListener('click', this.onStatsClick);
+    this.logoutButton?.removeEventListener('click', this.onLogoutClick);
+    document.removeEventListener('click', this.onDocumentClick);
+    this.isMenuOpen = false;
+    this.menuDropdown?.classList.remove('show');
+    this.menuToggle?.classList.remove('active');
   }
 
   /**
