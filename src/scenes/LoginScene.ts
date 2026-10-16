@@ -179,12 +179,15 @@ export class LoginScene extends Phaser.Scene {
       // Renderizar el botón de Google
       const buttonDiv = document.createElement('div');
       buttonDiv.id = 'google-signin-button';
-      buttonDiv.style.position = 'absolute';
-      buttonDiv.style.left = '50%';
-      buttonDiv.style.top = '50%';
+      buttonDiv.style.position = 'fixed';
       buttonDiv.style.transform = 'translate(-50%, -50%)';
-      buttonDiv.style.marginTop = '80px';
       buttonDiv.style.zIndex = '1000';
+      this.placeOverCanvas(buttonDiv);
+      const reposition = () => this.placeOverCanvas(buttonDiv);
+      this.scale.on(Phaser.Scale.Events.RESIZE, reposition);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+        this.scale.off(Phaser.Scale.Events.RESIZE, reposition)
+      );
 
       document.body.appendChild(buttonDiv);
 
@@ -207,6 +210,17 @@ export class LoginScene extends Phaser.Scene {
       loadingText.setText('Error al cargar Google Sign-In');
       loadingText.setColor(COLOR.red);
     }
+  }
+
+  /**
+   * Coloca el botón HTML de Google en el mismo punto del lienzo donde está el botón de Phaser
+   * (centro + 80 px del mundo del juego), sea cual sea la escala a la que se muestre.
+   */
+  private placeOverCanvas(element: HTMLElement): void {
+    const rect = this.game.canvas.getBoundingClientRect();
+    const scale = rect.width / this.cameras.main.width;
+    element.style.left = `${rect.left + rect.width / 2}px`;
+    element.style.top = `${rect.top + rect.height / 2 + 80 * scale}px`;
   }
 
   /**

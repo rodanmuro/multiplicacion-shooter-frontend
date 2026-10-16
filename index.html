@@ -3,13 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Multiplication Shooter</title>
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <div id="app"></div>
+    <!-- Aviso en celular vertical: el juego es horizontal (se muestra solo por CSS) -->
+    <div id="rotate-notice" role="alert">
+      <div class="rotate-icon">📱</div>
+      <p>Gira el celular para jugar</p>
+      <p class="rotate-hint">Multiplication Shooter se juega en horizontal</p>
+    </div>
     <!-- User menu outside canvas -->
     <div id="user-menu" style="display: none;">
       <div class="user-menu-toggle" id="user-menu-toggle">

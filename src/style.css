@@ -22,12 +22,19 @@ a:hover {
   color: #535bf2;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 h1 {
@@ -35,16 +42,25 @@ h1 {
   line-height: 1.1;
 }
 
+/* El Scale Manager de Phaser ajusta y centra el lienzo dentro de #app */
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
 }
 
-/* Asegurar que el cursor sea visible en el canvas */
+/* Asegurar que el cursor sea visible en el canvas; el toque no desplaza ni hace zoom */
 canvas {
   cursor: default;
+  touch-action: none;
+  display: block;
+}
+
+/* Los campos de los filtros sí deben poder seleccionarse y escribirse */
+input,
+select {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .logo {
@@ -313,4 +329,85 @@ button:focus-visible {
 .filter-btn--primary {
   padding: 8px 16px;
   background: #0066cc;
+}
+
+/* ------------------------------------------------------------------ */
+/* Celular                                                             */
+/* ------------------------------------------------------------------ */
+
+/* Aviso de rotación: solo en pantallas táctiles en vertical */
+#rotate-notice {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #1a1a2e;
+  color: #ffff00;
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+#rotate-notice p {
+  margin: 0;
+}
+
+#rotate-notice .rotate-icon {
+  font-size: 64px;
+  animation: rotate-hint 2s ease-in-out infinite;
+}
+
+#rotate-notice .rotate-hint {
+  color: #aaaaaa;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+@keyframes rotate-hint {
+  0%, 20% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(-90deg); }
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  #rotate-notice {
+    display: flex;
+  }
+}
+
+/* Pantallas bajas (celular en horizontal): el menú de usuario se reduce a un icono */
+@media (max-height: 520px) {
+  #user-menu {
+    top: 6px;
+    right: 6px;
+  }
+
+  .user-menu-toggle {
+    min-width: 0;
+    padding: 6px 10px;
+    gap: 6px;
+    border-width: 1px;
+  }
+
+  .user-menu-toggle::before {
+    content: '👤';
+    font-size: 16px;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .user-menu-dropdown {
+    top: 40px;
+    min-width: 160px;
+  }
+
+  .menu-item {
+    padding: 10px 14px;
+    font-size: 14px;
+  }
 }
