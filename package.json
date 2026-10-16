@@ -15,7 +15,8 @@
     "e2e": "start-server-and-test dev:e2e http://127.0.0.1:5174/multiplicacion/ cypress:run",
     "e2e:open": "start-server-and-test dev:e2e http://127.0.0.1:5174/multiplicacion/ cypress:open",
     "typecheck:e2e": "tsc -p cypress/tsconfig.json",
-    "cypress:open": "env -u ELECTRON_RUN_AS_NODE cypress open"
+    "cypress:open": "env -u ELECTRON_RUN_AS_NODE cypress open",
+    "e2e:update-snapshots": "UPDATE_SNAPSHOTS=1 npm run e2e"
   },
   "devDependencies": {
     "cypress": "^14.5.4",

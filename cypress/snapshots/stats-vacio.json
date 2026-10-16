@@ -1,0 +1,169 @@
+{
+  "escena": [
+    {"type":"Text","x":600,"y":400,"depth":0,"alpha":1,"visible":false,"interactive":false,"text":"Cargando sesiones...","origin":[0.5,0.5],"fontSize":"32px","color":"#ffffff"},
+    {"type":"Text","x":600,"y":400,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"No tienes sesiones de juego todavía.\n¡Juega una partida para ver tus estadísticas!","origin":[0.5,0.5],"fontSize":"24px","color":"#ffffff"},
+    {"type":"Text","x":50,"y":40,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"← Volver","origin":[0,0.5],"fontSize":"24px","color":"#ffffff","backgroundColor":"#4a5568"},
+    {"type":"Text","x":600,"y":40,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"HISTORIAL DE SESIONES","origin":[0.5,0.5],"fontSize":"48px","color":"#ffff00","fontStyle":"bold","strokeThickness":6}
+  ],
+  "dom": {
+    "tag": "div",
+    "style": {
+      "position": "absolute",
+      "top": "70px",
+      "left": "640px",
+      "display": "flex",
+      "flexWrap": "nowrap",
+      "gap": "10px",
+      "alignItems": "center",
+      "justifyContent": "normal",
+      "backgroundColor": "rgba(26, 26, 46, 0.95)",
+      "color": "rgb(33, 53, 71)",
+      "fontSize": "16px",
+      "padding": "8px 20px",
+      "borderRadius": "8px",
+      "border": "1px solid rgb(51, 51, 51)",
+      "zIndex": "10",
+      "cursor": "auto"
+    },
+    "children": [
+      {
+        "tag": "span",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(170, 170, 170)",
+          "fontSize": "14px",
+          "padding": "0px",
+          "borderRadius": "0px",
+          "border": "0px none rgb(170, 170, 170)",
+          "zIndex": "auto",
+          "cursor": "auto"
+        },
+        "text": "Desde:"
+      },
+      {
+        "tag": "input",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgb(26, 26, 46)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "14px",
+          "padding": "6px 10px",
+          "borderRadius": "4px",
+          "border": "1px solid rgb(68, 68, 68)",
+          "zIndex": "auto",
+          "cursor": "default"
+        },
+        "type": "date",
+        "value": "<AÑO>-01-01",
+        "children": []
+      },
+      {
+        "tag": "span",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(170, 170, 170)",
+          "fontSize": "14px",
+          "padding": "0px",
+          "borderRadius": "0px",
+          "border": "0px none rgb(170, 170, 170)",
+          "zIndex": "auto",
+          "cursor": "auto"
+        },
+        "text": "Mín pts:"
+      },
+      {
+        "tag": "input",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgb(26, 26, 46)",
+          "color": "rgb(255, 255, 255)",
+          "fontSize": "14px",
+          "padding": "6px 10px",
+          "borderRadius": "4px",
+          "border": "1px solid rgb(68, 68, 68)",
+          "zIndex": "auto",
+          "cursor": "text"
+        },
+        "type": "number",
+        "min": "0",
+        "step": "100",
+        "value": "1000",
+        "children": []
+      },
+      {
+        "tag": "span",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(85, 85, 85)",
+          "fontSize": "14px",
+          "padding": "0px",
+          "borderRadius": "0px",
+          "border": "0px none rgb(85, 85, 85)",
+          "zIndex": "auto",
+          "cursor": "auto"
+        },
+        "text": "|"
+      },
+      {
+        "tag": "span",
+        "style": {
+          "position": "static",
+          "top": "auto",
+          "left": "auto",
+          "display": "block",
+          "flexWrap": "nowrap",
+          "gap": "normal",
+          "alignItems": "normal",
+          "justifyContent": "normal",
+          "backgroundColor": "rgba(0, 0, 0, 0)",
+          "color": "rgb(78, 205, 196)",
+          "fontSize": "14px",
+          "padding": "0px",
+          "borderRadius": "0px",
+          "border": "0px none rgb(78, 205, 196)",
+          "zIndex": "auto",
+          "cursor": "auto"
+        },
+        "text": "Total sesiones encontradas: 0"
+      }
+    ]
+  }
+}

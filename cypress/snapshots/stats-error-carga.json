@@ -1,0 +1,5 @@
+[
+  {"type":"Text","x":600,"y":400,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"Error al cargar sesiones. Intenta de nuevo.","origin":[0.5,0.5],"fontSize":"32px","color":"#ff0000"},
+  {"type":"Text","x":50,"y":40,"depth":0,"alpha":1,"visible":true,"interactive":true,"text":"← Volver","origin":[0,0.5],"fontSize":"24px","color":"#ffffff","backgroundColor":"#4a5568"},
+  {"type":"Text","x":600,"y":40,"depth":0,"alpha":1,"visible":true,"interactive":false,"text":"HISTORIAL DE SESIONES","origin":[0.5,0.5],"fontSize":"48px","color":"#ffff00","fontStyle":"bold","strokeThickness":6}
+]
