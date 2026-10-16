@@ -30,3 +30,7 @@ dist-ssr
 
 # Misc
 frontend.zip
+# Cypress
+cypress/screenshots
+cypress/videos
+cypress/downloads
