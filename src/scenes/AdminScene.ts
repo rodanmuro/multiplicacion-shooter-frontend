@@ -14,6 +14,7 @@ import { createButton, type ButtonStyle } from '../ui/widgets/Button';
 import { createModalFrame } from '../ui/widgets/Modal';
 import { createPagination } from '../ui/widgets/Pagination';
 import { FilterBar } from '../ui/html/FilterBar';
+import { createDataTable, type TableCell, type TableColumn } from '../ui/widgets/DataTable';
 
 /**
  * Escena de administración mejorada
@@ -154,32 +155,31 @@ export default class AdminScene extends Phaser.Scene {
     }
 
     // Tabla de usuarios con headers clickeables
-    const tableY = 185;
-    const headers = [
-      { label: 'No', field: null },
-      { label: 'Email', field: 'email' as const },
-      { label: 'Nombre', field: 'name' as const },
-      { label: 'Grupo', field: 'group' as const },
-      { label: 'Sesiones', field: 'sessions_count' as const },
-      { label: 'Promedio', field: 'avg_score' as const },
-      { label: 'Mejor', field: null },
-      { label: 'Última Sesión', field: null }
-    ];
-    const headerPositions = [centerX - 530, centerX - 480, centerX - 280, centerX - 100, centerX + 20, centerX + 120, centerX + 220, centerX + 340];
-
-    this.createSortableTableHeader(centerX, tableY, headers, headerPositions);
-
-    // Renderizar filas (14 filas visibles considerando el espacio disponible)
-    const maxVisible = 14;
-    const itemHeight = 40;
-
-    // Calcular número de fila base según la página actual
     const pageOffset = ((this.usersPagination?.current_page || 1) - 1) * (this.usersFilters.per_page || 40);
 
-    this.users.slice(0, maxVisible).forEach((user, index) => {
-      const rowY = tableY + 45 + index * itemHeight;
-      const rowNumber = pageOffset + index + 1;
-      this.createUserRow(user, rowY, headerPositions, itemHeight, rowNumber);
+    createDataTable<AdminUserListItem>(this, {
+      centerX,
+      columns: this.userColumns(pageOffset),
+      rows: this.users,
+      maxRows: 14,
+      header: { y: 185, width: 1100, fontSize: FONT_SIZE.xsPlus, inactiveColor: '#cccc00' },
+      sort: {
+        by: this.usersFilters.sort_by,
+        order: this.usersFilters.order,
+        onSort: (field) => this.sortUsersBy(field),
+      },
+      firstRowY: 230,
+      rowSpacing: 40,
+      rowBackground: {
+        width: 1100,
+        height: 35,
+        fill: 0x16213e,
+        alpha: 0.8,
+        stroke: { width: 1, color: 0x0f3460 },
+        hover: { over: [0x1a2744], out: [0x16213e] },
+        onClick: (index) => this.viewUserSessions(this.users[index]),
+      },
+      onCreate: (obj) => obj.setData('clearable', true),
     });
 
     // Paginación
@@ -323,59 +323,72 @@ export default class AdminScene extends Phaser.Scene {
   }
 
   /**
-   * Crea una fila de usuario
+   * Columnas de la tabla de usuarios
    */
-  private createUserRow(
-    user: AdminUserListItem,
-    rowY: number,
-    positions: number[],
-    itemHeight: number,
-    rowNumber: number
-  ): void {
-    const centerX = this.cameras.main.width / 2;
+  private userColumns(pageOffset: number): TableColumn<AdminUserListItem>[] {
+    const text = (value: string, color: string): TableCell => ({ text: value, color });
+    return [
+      { header: 'No', headerX: -530, x: -530, cell: (_u, i) => text((pageOffset + i + 1).toString(), COLOR.grayMid) },
+      {
+        header: 'Email',
+        headerX: -480,
+        x: -480,
+        sortField: 'email',
+        cell: (u) => text(u.email.length > 28 ? u.email.substring(0, 25) + '...' : u.email, COLOR.white),
+      },
+      {
+        header: 'Nombre',
+        headerX: -280,
+        x: -280,
+        sortField: 'name',
+        cell: (u) => {
+          const fullName = `${u.name || ''} ${u.lastname || ''}`.trim() || '-';
+          return text(fullName.length > 18 ? fullName.substring(0, 15) + '...' : fullName, COLOR.white);
+        },
+      },
+      { header: 'Grupo', headerX: -100, x: -100, sortField: 'group', cell: (u) => text(u.group || '-', COLOR.grayLight) },
+      {
+        header: 'Sesiones',
+        headerX: 20,
+        x: 20,
+        sortField: 'sessions_count',
+        cell: (u) => text(u.game_sessions_count.toString(), COLOR.mint),
+      },
+      {
+        header: 'Promedio',
+        headerX: 120,
+        x: 120,
+        sortField: 'avg_score',
+        cell: (u) =>
+          text(u.avg_score !== null && u.avg_score !== undefined ? Number(u.avg_score).toFixed(1) : '-', COLOR.teal),
+      },
+      {
+        header: 'Mejor',
+        headerX: 220,
+        x: 220,
+        cell: (u) => text(u.best_score !== null ? u.best_score.toString() : '-', COLOR.yellow),
+      },
+      {
+        header: 'Última Sesión',
+        headerX: 340,
+        x: 340,
+        cell: (u) => text(u.last_played_at ? formatDate(u.last_played_at) : '-', COLOR.grayLight),
+      },
+    ];
+  }
 
-    // Fondo de fila (interactivo)
-    const rowBg = this.add
-      .rectangle(centerX, rowY, 1100, itemHeight - 5, 0x16213e, 0.8)
-      .setStrokeStyle(1, 0x0f3460)
-      .setInteractive({ useHandCursor: true })
-      .setData('clearable', true);
-
-    rowBg.on('pointerdown', () => this.viewUserSessions(user));
-    rowBg.on('pointerover', () => rowBg.setFillStyle(0x1a2744));
-    rowBg.on('pointerout', () => rowBg.setFillStyle(0x16213e));
-
-    // Número de fila
-    this.createText(positions[0], rowY, rowNumber.toString(), COLOR.grayMid);
-
-    // Email (truncado)
-    const emailDisplay = user.email.length > 28 ? user.email.substring(0, 25) + '...' : user.email;
-    this.createText(positions[1], rowY, emailDisplay, COLOR.white);
-
-    // Nombre
-    const fullName = `${user.name || ''} ${user.lastname || ''}`.trim() || '-';
-    const nameDisplay = fullName.length > 18 ? fullName.substring(0, 15) + '...' : fullName;
-    this.createText(positions[2], rowY, nameDisplay, COLOR.white);
-
-    // Grupo
-    this.createText(positions[3], rowY, user.group || '-', COLOR.grayLight);
-
-    // Sesiones
-    this.createText(positions[4], rowY, user.game_sessions_count.toString(), COLOR.mint);
-
-    // Promedio
-    const avgScore = user.avg_score !== null && user.avg_score !== undefined ? Number(user.avg_score).toFixed(1) : '-';
-    this.createText(positions[5], rowY, avgScore, COLOR.teal);
-
-    // Mejor
-    const bestScore = user.best_score !== null ? user.best_score.toString() : '-';
-    this.createText(positions[6], rowY, bestScore, COLOR.yellow);
-
-    // Última sesión
-    const lastPlayed = user.last_played_at
-      ? formatDate(user.last_played_at)
-      : '-';
-    this.createText(positions[7], rowY, lastPlayed, COLOR.grayLight);
+  /**
+   * Ordena la tabla de usuarios por un campo (si ya estaba ordenada por él, invierte el orden)
+   */
+  private sortUsersBy(field: string): void {
+    if (this.usersFilters.sort_by === field) {
+      this.usersFilters.order = this.usersFilters.order === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.usersFilters.sort_by = field as AdminUsersFilterParams['sort_by'];
+      this.usersFilters.order = 'desc';
+    }
+    this.usersFilters.page = 1;
+    this.loadUsers();
   }
 
   /**
@@ -464,19 +477,22 @@ export default class AdminScene extends Phaser.Scene {
     }
 
     // Tabla de sesiones
-    const tableY = 250;
-    const headers = ['#', 'Fecha', 'Hora', 'Puntuación', 'Nivel', 'Disparos', 'Aciertos', 'Precisión'];
-    const positions = [centerX - 500, centerX - 430, centerX - 300, centerX - 150, centerX - 20, centerX + 100, centerX + 220, centerX + 360];
-
-    this.createTableHeader(centerX, tableY, headers, positions);
-
-    // Renderizar filas de sesiones
-    const maxVisible = 7;
-    const itemHeight = 50;
-
-    this.userSessions.slice(0, maxVisible).forEach((session, index) => {
-      const rowY = tableY + 45 + index * itemHeight;
-      this.createSessionRow(session, rowY, positions, itemHeight);
+    createDataTable<SessionListItemWithRow>(this, {
+      centerX,
+      columns: this.sessionColumns(),
+      rows: this.userSessions,
+      maxRows: 7,
+      header: { y: 250, width: 1100, fontSize: FONT_SIZE.xsPlus },
+      firstRowY: 295,
+      rowSpacing: 50,
+      rowBackground: {
+        width: 1050,
+        height: 45,
+        fill: 0x16213e,
+        alpha: 0.8,
+        stroke: { width: 1, color: 0x0f3460 },
+      },
+      onCreate: (obj) => obj.setData('clearable', true),
     });
 
     // Paginación
@@ -575,131 +591,32 @@ export default class AdminScene extends Phaser.Scene {
   }
 
   /**
-   * Crea una fila de sesión
+   * Columnas de la tabla de sesiones de un usuario
    */
-  private createSessionRow(
-    session: SessionListItemWithRow,
-    rowY: number,
-    positions: number[],
-    itemHeight: number
-  ): void {
-    const centerX = this.cameras.main.width / 2;
-
-    this.add
-      .rectangle(centerX, rowY, 1050, itemHeight - 5, 0x16213e, 0.8)
-      .setStrokeStyle(1, 0x0f3460)
-      .setData('clearable', true);
-
-    // Número de fila
-    this.createText(positions[0], rowY, session.row_number.toString(), COLOR.grayMid);
-
-    // Fecha
-    this.createText(positions[1], rowY, formatDate(session.started_at), COLOR.white);
-
-    // Hora
-    this.createText(positions[2], rowY, formatTime(session.started_at), COLOR.grayLight);
-
-    // Puntuación
-    this.createText(positions[3], rowY, session.final_score.toString(), COLOR.mint);
-
-    // Nivel
-    this.createText(positions[4], rowY, session.max_level_reached.toString(), COLOR.white);
-
-    // Disparos
-    this.createText(positions[5], rowY, session.total_shots.toString(), COLOR.white);
-
-    // Aciertos
-    this.createText(positions[6], rowY, session.correct_shots.toString(), COLOR.teal);
-
-    // Precisión
-    const accuracyColor = session.accuracy >= 80 ? COLOR.green : session.accuracy >= 60 ? COLOR.amber : COLOR.dangerHoverSoft;
-    this.createText(positions[7], rowY, `${session.accuracy}%`, accuracyColor);
+  private sessionColumns(): TableColumn<SessionListItemWithRow>[] {
+    const text = (value: string, color: string): TableCell => ({ text: value, color });
+    return [
+      { header: '#', headerX: -500, x: -500, cell: (s) => text(s.row_number.toString(), COLOR.grayMid) },
+      { header: 'Fecha', headerX: -430, x: -430, cell: (s) => text(formatDate(s.started_at), COLOR.white) },
+      { header: 'Hora', headerX: -300, x: -300, cell: (s) => text(formatTime(s.started_at), COLOR.grayLight) },
+      { header: 'Puntuación', headerX: -150, x: -150, cell: (s) => text(s.final_score.toString(), COLOR.mint) },
+      { header: 'Nivel', headerX: -20, x: -20, cell: (s) => text(s.max_level_reached.toString(), COLOR.white) },
+      { header: 'Disparos', headerX: 100, x: 100, cell: (s) => text(s.total_shots.toString(), COLOR.white) },
+      { header: 'Aciertos', headerX: 220, x: 220, cell: (s) => text(s.correct_shots.toString(), COLOR.teal) },
+      {
+        header: 'Precisión',
+        headerX: 360,
+        x: 360,
+        cell: (s) =>
+          text(
+            `${s.accuracy}%`,
+            s.accuracy >= 80 ? COLOR.green : s.accuracy >= 60 ? COLOR.amber : COLOR.dangerHoverSoft
+          ),
+      },
+    ];
   }
 
   // --- Métodos auxiliares ---
-
-  /**
-   * Crea un encabezado de tabla con ordenamiento clickeable
-   */
-  private createSortableTableHeader(
-    centerX: number,
-    y: number,
-    headers: Array<{ label: string; field: 'email' | 'name' | 'group' | 'sessions_count' | 'created_at' | 'avg_score' | null }>,
-    positions: number[]
-  ): void {
-    this.add
-      .rectangle(centerX, y, 1100, 35, 0x1a1a2e, 1)
-      .setStrokeStyle(2, 0xffff00)
-      .setDepth(100)
-      .setData('clearable', true);
-
-    headers.forEach((header, index) => {
-      const sortIndicator = header.field === this.usersFilters.sort_by
-        ? (this.usersFilters.order === 'asc' ? ' ▲' : ' ▼')
-        : '';
-
-      const headerText = this.add
-        .text(positions[index], y, header.label + sortIndicator, {
-          fontSize: FONT_SIZE.xsPlus,
-          color: header.field ? COLOR.yellow : '#cccc00',
-          fontStyle: 'bold',
-        })
-        .setOrigin(0, 0.5)
-        .setDepth(101)
-        .setData('clearable', true);
-
-      // Hacer clickeable solo si tiene campo asociado
-      if (header.field) {
-        headerText.setInteractive({ useHandCursor: true });
-
-        headerText.on('pointerdown', () => {
-          if (!header.field) return;
-
-          // Si ya está ordenado por este campo, invertir el orden
-          if (this.usersFilters.sort_by === header.field) {
-            this.usersFilters.order = this.usersFilters.order === 'asc' ? 'desc' : 'asc';
-          } else {
-            // Si es un campo nuevo, ordenar descendente por defecto
-            this.usersFilters.sort_by = header.field;
-            this.usersFilters.order = 'desc';
-          }
-          this.usersFilters.page = 1;
-          this.loadUsers();
-        });
-
-        headerText.on('pointerover', () => headerText.setColor(COLOR.white));
-        headerText.on('pointerout', () => headerText.setColor(COLOR.yellow));
-      }
-    });
-  }
-
-  /**
-   * Crea un encabezado de tabla
-   */
-  private createTableHeader(
-    centerX: number,
-    y: number,
-    headers: string[],
-    positions: number[]
-  ): void {
-    this.add
-      .rectangle(centerX, y, 1100, 35, 0x1a1a2e, 1)
-      .setStrokeStyle(2, 0xffff00)
-      .setDepth(100)
-      .setData('clearable', true);
-
-    headers.forEach((header, index) => {
-      this.add
-        .text(positions[index], y, header, {
-          fontSize: FONT_SIZE.xsPlus,
-          color: COLOR.yellow,
-          fontStyle: 'bold',
-        })
-        .setOrigin(0, 0.5)
-        .setDepth(101)
-        .setData('clearable', true);
-    });
-  }
 
   /**
    * Crea controles de paginación
@@ -752,16 +669,6 @@ export default class AdminScene extends Phaser.Scene {
       'clearable',
       true
     );
-  }
-
-  /**
-   * Crea un texto simple
-   */
-  private createText(x: number, y: number, text: string, color: string): void {
-    this.add
-      .text(x, y, text, { fontSize: FONT_SIZE.xs, color })
-      .setOrigin(0, 0.5)
-      .setData('clearable', true);
   }
 
   /**

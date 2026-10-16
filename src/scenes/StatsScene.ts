@@ -7,6 +7,7 @@ import { createButton } from '../ui/widgets/Button';
 import { createModalFrame } from '../ui/widgets/Modal';
 import { createPagination } from '../ui/widgets/Pagination';
 import { FilterBar } from '../ui/html/FilterBar';
+import { createDataTable, type TableColumn } from '../ui/widgets/DataTable';
 
 /**
  * Escena de estadísticas - Muestra historial de sesiones del usuario
@@ -181,176 +182,105 @@ export class StatsScene extends Phaser.Scene {
       return;
     }
 
-    const startY = 160;
-    const itemHeight = 68;
-    const maxVisibleSessions = 9;
-
-    // Mostrar solo las primeras 9 sesiones (o menos si hay menos)
-    const sessionsToDisplay = this.sessions.slice(0, maxVisibleSessions);
-
-    sessionsToDisplay.forEach((session, index) => {
-      const y = startY + (index * itemHeight);
-      const sessionItem = this.createSessionItem(session, y);
-      this.sessionsList.add(sessionItem);
+    createDataTable<SessionListItem>(this, {
+      centerX: this.cameras.main.centerX,
+      columns: this.sessionColumns(),
+      rows: this.sessions,
+      maxRows: 9,
+      header: { y: 110, width: 1000, fontSize: FONT_SIZE.sm },
+      firstRowY: 160,
+      rowSpacing: 68,
+      rowBackground: {
+        width: 1000,
+        height: 60,
+        fill: 0x2d3748,
+        alpha: 0.8,
+        hover: { over: [0x4a5568, 0.9], out: [0x2d3748, 0.8] },
+        onClick: (index) => this.showSessionDetail(this.sessions[index].id),
+      },
+      rowContainers: true,
+      onCreate: (obj) => this.sessionsList.add(obj),
     });
 
     // Agregar controles de paginación si hay más de una página
     if (this.totalPages > 1) {
       this.createPaginationControls();
     }
-
-    // Crear encabezados de la tabla (al final para que estén arriba en z-index)
-    this.createTableHeaders();
   }
 
   /**
-   * Crea los encabezados de la tabla de sesiones
+   * Columnas de la lista de sesiones
    */
-  private createTableHeaders(): void {
-    const headerY = 110;
-    const centerX = this.cameras.main.centerX;
-
-    // Fondo del encabezado
-    const headerBg = this.add.rectangle(centerX, headerY, 1000, 35, 0x1a1a2e, 1);
-    headerBg.setStrokeStyle(2, 0xffff00);
-    headerBg.setDepth(100); // Asegurar que esté arriba
-    this.sessionsList.add(headerBg);
-
-    // Encabezados de columnas
-    const headers = [
-      { text: 'Fecha y Hora', x: centerX - 440, align: 'left' },
-      { text: 'Puntaje', x: centerX - 230, align: 'left' },
-      { text: 'Nivel', x: centerX - 80, align: 'left' },
-      { text: 'Precisión', x: centerX + 70, align: 'left' },
-      { text: 'Disparos', x: centerX + 200, align: 'left' },
-      { text: '', x: centerX + 350, align: 'left' } // Columna de acción
-    ];
-
-    headers.forEach(header => {
-      const headerText = this.add.text(
-        header.x,
-        headerY,
-        header.text,
-        {
-          fontSize: FONT_SIZE.sm,
+  private sessionColumns(): TableColumn<SessionListItem>[] {
+    return [
+      {
+        header: 'Fecha y Hora',
+        headerX: -440,
+        x: -480,
+        cell: (s) => ({
+          text: `${formatDate(s.started_at)} ${formatTime(s.started_at)}`,
+          color: COLOR.white,
+          fontSize: FONT_SIZE.md,
+        }),
+      },
+      {
+        header: 'Puntaje',
+        headerX: -230,
+        x: -250,
+        cell: (s) => ({
+          text: `${s.final_score} pts`,
           color: COLOR.yellow,
-          fontStyle: 'bold'
-        }
-      );
-      headerText.setOrigin(header.align === 'left' ? 0 : 0.5, 0.5);
-      headerText.setDepth(101); // Asegurar que esté arriba del fondo
-      this.sessionsList.add(headerText);
-    });
-  }
-
-  /**
-   * Crea un item visual para una sesión
-   */
-  private createSessionItem(session: SessionListItem, y: number): Phaser.GameObjects.Container {
-    const container = this.add.container(0, 0);
-    const centerX = this.cameras.main.centerX;
-
-    // Fondo del item
-    const bg = this.add.rectangle(centerX, y, 1000, 60, 0x2d3748, 0.8);
-    bg.setInteractive({ useHandCursor: true });
-    container.add(bg);
-
-    // Fecha y hora
-    const dateStr = formatDate(session.started_at);
-    const timeStr = formatTime(session.started_at);
-
-    const dateText = this.add.text(
-      centerX - 480,
-      y,
-      `${dateStr} ${timeStr}`,
+          fontSize: FONT_SIZE.lgPlus,
+          fontStyle: 'bold',
+        }),
+      },
       {
-        fontSize: FONT_SIZE.md,
-        color: COLOR.white
-      }
-    );
-    dateText.setOrigin(0, 0.5);
-    container.add(dateText);
-
-    // Puntaje
-    const scoreText = this.add.text(
-      centerX - 250,
-      y,
-      `${session.final_score} pts`,
+        header: 'Nivel',
+        headerX: -80,
+        x: -100,
+        cell: (s) => ({
+          text: `Nivel ${s.max_level_reached}`,
+          color: COLOR.green,
+          fontSize: FONT_SIZE.md,
+        }),
+      },
       {
-        fontSize: FONT_SIZE.lgPlus,
-        color: COLOR.yellow,
-        fontStyle: 'bold'
-      }
-    );
-    scoreText.setOrigin(0, 0.5);
-    container.add(scoreText);
-
-    // Nivel
-    const levelText = this.add.text(
-      centerX - 100,
-      y,
-      `Nivel ${session.max_level_reached}`,
+        header: 'Precisión',
+        headerX: 70,
+        x: 50,
+        cell: (s) => ({
+          text: `${s.accuracy.toFixed(1)}%`,
+          color: s.accuracy >= 70 ? COLOR.green : '#ff9900',
+          fontSize: FONT_SIZE.md,
+        }),
+      },
       {
-        fontSize: FONT_SIZE.md,
-        color: COLOR.green
-      }
-    );
-    levelText.setOrigin(0, 0.5);
-    container.add(levelText);
-
-    // Precisión
-    const accuracyColor = session.accuracy >= 70 ? COLOR.green : '#ff9900';
-    const accuracyText = this.add.text(
-      centerX + 50,
-      y,
-      `${session.accuracy.toFixed(1)}%`,
+        header: 'Disparos',
+        headerX: 200,
+        x: 180,
+        cell: (s) => ({
+          text: `${s.correct_shots}/${s.total_shots}`,
+          color: COLOR.white,
+          fontSize: FONT_SIZE.md,
+        }),
+      },
       {
-        fontSize: FONT_SIZE.md,
-        color: accuracyColor
-      }
-    );
-    accuracyText.setOrigin(0, 0.5);
-    container.add(accuracyText);
-
-    // Disparos
-    const shotsText = this.add.text(
-      centerX + 180,
-      y,
-      `${session.correct_shots}/${session.total_shots}`,
-      {
-        fontSize: FONT_SIZE.md,
-        color: COLOR.white
-      }
-    );
-    shotsText.setOrigin(0, 0.5);
-    container.add(shotsText);
-
-    // Botón ver detalle
-    const detailBtn = createButton(this, {
-      x: centerX + 350,
-      y,
-      text: 'Ver detalle',
-      fontSize: FONT_SIZE.sm,
-      bg: '#4299e1',
-      padding: { x: 10, y: 5 },
-      origin: { x: 0, y: 0.5 },
-    });
-    container.add(detailBtn);
-
-    // Eventos de hover
-    bg.on('pointerover', () => {
-      bg.setFillStyle(0x4a5568, 0.9);
-    });
-
-    bg.on('pointerout', () => {
-      bg.setFillStyle(0x2d3748, 0.8);
-    });
-
-    // Click para ver detalle
-    bg.on('pointerdown', () => this.showSessionDetail(session.id));
-    detailBtn.on('pointerdown', () => this.showSessionDetail(session.id));
-
-    return container;
+        header: '',
+        headerX: 350,
+        x: 350,
+        render: (s, x, y) =>
+          createButton(this, {
+            x,
+            y,
+            text: 'Ver detalle',
+            fontSize: FONT_SIZE.sm,
+            bg: '#4299e1',
+            padding: { x: 10, y: 5 },
+            origin: { x: 0, y: 0.5 },
+            onClick: () => this.showSessionDetail(s.id),
+          }),
+      },
+    ];
   }
 
   /**
