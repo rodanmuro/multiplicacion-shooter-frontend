@@ -1,10 +1,10 @@
 import Phaser from 'phaser';
 import { sessionApiService } from '../services/sessionApiService';
-import type { SessionListItem, SessionDetail } from '../types/api';
+import type { SessionListItem } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
-import { formatDate, formatDateTime, formatDurationMMSS, formatTime } from '../utils/format';
+import { formatDate, formatTime } from '../utils/format';
 import { createButton } from '../ui/widgets/Button';
-import { createModalFrame } from '../ui/widgets/Modal';
+import { SessionDetailModal } from '../ui/SessionDetailModal';
 import { createPagination } from '../ui/widgets/Pagination';
 import { FilterBar } from '../ui/html/FilterBar';
 import { createDataTable, type TableColumn } from '../ui/widgets/DataTable';
@@ -23,7 +23,6 @@ export class StatsScene extends Phaser.Scene {
   private totalSpan: HTMLSpanElement | null = null;
   private sessionsList!: Phaser.GameObjects.Container;
   private loadingText!: Phaser.GameObjects.Text;
-  private detailModal!: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'StatsScene' });
@@ -322,106 +321,10 @@ export class StatsScene extends Phaser.Scene {
   private async showSessionDetail(sessionId: number): Promise<void> {
     try {
       const detail = await sessionApiService.getSessionDetail(sessionId);
-      this.showDetailModal(detail);
+      new SessionDetailModal(this, detail);
     } catch (error) {
       console.error('Error al cargar detalle de sesión:', error);
       alert('Error al cargar el detalle de la sesión');
-    }
-  }
-
-  /**
-   * Muestra modal con detalle completo de la sesión
-   */
-  private showDetailModal(detail: SessionDetail): void {
-    const { backdrop, panel } = createModalFrame(this, {
-      centerX: this.cameras.main.centerX,
-      centerY: this.cameras.main.centerY,
-      width: 900,
-      height: 600,
-      fill: 0x1a1a2e,
-      fillAlpha: 1,
-      strokeWidth: 2,
-      strokeColor: 0xffff00,
-      backdrop: { width: this.cameras.main.width, height: this.cameras.main.height, alpha: 0.8 },
-    });
-    this.detailModal = this.add.container(0, 0);
-    this.detailModal.add(backdrop!);
-    this.detailModal.add(panel);
-
-    // Título del modal
-    const dateStr = formatDateTime(detail.session.started_at);
-
-    const modalTitle = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY - 260,
-      `Sesión del ${dateStr}`,
-      {
-        fontSize: FONT_SIZE.xxl,
-        color: COLOR.yellow,
-        fontStyle: 'bold'
-      }
-    );
-    modalTitle.setOrigin(0.5);
-    this.detailModal.add(modalTitle);
-
-    // Estadísticas generales
-    const statsY = this.cameras.main.centerY - 200;
-    const stats = [
-      `Puntaje Final: ${detail.session.final_score}`,
-      `Nivel Máximo: ${detail.session.max_level_reached}`,
-      `Duración: ${formatDurationMMSS(detail.session.duration_seconds)}`,
-      `Disparos Totales: ${detail.session.total_shots}`,
-      `Aciertos: ${detail.session.correct_shots}`,
-      `Errores: ${detail.session.wrong_shots}`,
-      `Precisión: ${detail.session.accuracy.toFixed(2)}%`
-    ];
-
-    stats.forEach((stat, index) => {
-      const statText = this.add.text(
-        this.cameras.main.centerX - 400,
-        statsY + (index * 30),
-        stat,
-        {
-          fontSize: FONT_SIZE.lg,
-          color: COLOR.white
-        }
-      );
-      this.detailModal.add(statText);
-    });
-
-    // Total de disparos mostrados
-    const shotsTitle = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY + 30,
-      `Total de disparos: ${detail.shots.length}`,
-      {
-        fontSize: FONT_SIZE.md,
-        color: COLOR.green
-      }
-    );
-    shotsTitle.setOrigin(0.5);
-    this.detailModal.add(shotsTitle);
-
-    // Botón cerrar
-    const closeBtn = createButton(this, {
-      x: this.cameras.main.centerX,
-      y: this.cameras.main.centerY + 250,
-      text: 'Cerrar',
-      fontSize: FONT_SIZE.xl,
-      bg: COLOR.dangerBtn,
-      padding: { x: 30, y: 12 },
-      hover: { bg: '#c53030' },
-      onClick: () => this.closeDetailModal(),
-    });
-    this.detailModal.add(closeBtn);
-  }
-
-  /**
-   * Cierra el modal de detalle
-   */
-  private closeDetailModal(): void {
-    if (this.detailModal) {
-      this.detailModal.destroy();
     }
   }
 

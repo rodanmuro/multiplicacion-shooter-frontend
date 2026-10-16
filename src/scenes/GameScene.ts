@@ -18,7 +18,7 @@ import { shotApiService } from '../services/shotApiService';
 import type { RecordShotPayload, FinishedSessionData } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
 import { formatClock } from '../utils/format';
-import { createButton, type ButtonStyle } from '../ui/widgets/Button';
+import { SessionSummaryOverlay } from '../ui/SessionSummaryOverlay';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -359,234 +359,33 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showSessionSummary(): void {
-    if (this.lastFinishedSessionData) {
-      this.showSessionSummaryBackend(this.lastFinishedSessionData);
-    } else {
-      this.showSessionSummaryLocal();
-    }
+    const statsText = this.lastFinishedSessionData
+      ? this.backendSummaryText(this.lastFinishedSessionData)
+      : this.localSummaryText();
+
+    new SessionSummaryOverlay(this, statsText, () => this.scene.restart()).show();
   }
 
-  private showSessionSummaryLocal(): void {
-    // Restaurar cursor normal
-    this.input.setDefaultCursor('default');
-
-    const info = this.progressionManager.getProgressInfo();
-    const finalScore = this.scoreManager.getScore();
-
-    // Crear overlay oscuro
-    const overlay = this.add.rectangle(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      this.cameras.main.width,
-      this.cameras.main.height,
-      0x000000,
-      0.8
-    );
-    overlay.setDepth(3000);
-
-    // Crear texto de resumen
-    const summaryText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY - 150,
-      '¡SESIÓN COMPLETADA!',
-      {
-        fontSize: FONT_SIZE.hero,
-        color: COLOR.yellow,
-        fontStyle: 'bold',
-        stroke: COLOR.black,
-        strokeThickness: 8
-      }
-    );
-    summaryText.setOrigin(0.5);
-    summaryText.setDepth(3001);
-
-    const statsText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      `Puntuación Final: ${finalScore}\n` +
-      `Nivel Alcanzado: ${info.level}\n` +
-      `Última Tabla: Tabla del ${info.table}\n` +
-      `Tiempo Jugado: ${formatClock(Math.floor(info.elapsedTime / 1000))}`,
-      {
-        fontSize: FONT_SIZE.title,
-        color: COLOR.white,
-        fontStyle: 'bold',
-        align: 'center',
-        lineSpacing: 10
-      }
-    );
-    statsText.setOrigin(0.5);
-    statsText.setDepth(3001);
-
-    const restartText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY + 150,
-      'Haz clic para nueva sesión',
-      {
-        fontSize: FONT_SIZE.xxl,
-        color: COLOR.green,
-        fontStyle: 'italic'
-      }
-    );
-    restartText.setOrigin(0.5);
-    restartText.setDepth(3001);
-
-    // Animación de parpadeo en texto de reinicio
-    this.tweens.add({
-      targets: restartText,
-      alpha: 0.3,
-      duration: 800,
-      ease: 'Sine.easeInOut',
-      yoyo: true,
-      repeat: -1
-    });
-
-    // Reiniciar al hacer clic (con confirmación)
-    this.input.once('pointerdown', () => {
-      this.showRestartConfirmation(overlay, summaryText, statsText, restartText);
-    });
-  }
-
-  private showSessionSummaryBackend(session: FinishedSessionData): void {
-    // Restaurar cursor normal
-    this.input.setDefaultCursor('default');
-
-    // Crear overlay oscuro
-    const overlay = this.add.rectangle(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      this.cameras.main.width,
-      this.cameras.main.height,
-      0x000000,
-      0.8
-    );
-    overlay.setDepth(3000);
-
-    const title = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY - 150,
-      '¡SESIÓN COMPLETADA!',
-      {
-        fontSize: FONT_SIZE.hero,
-        color: COLOR.yellow,
-        fontStyle: 'bold',
-        stroke: COLOR.black,
-        strokeThickness: 8
-      }
-    );
-    title.setOrigin(0.5);
-    title.setDepth(3001);
-
-    const stats = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
+  /** Resumen con los datos que devolvió el backend */
+  private backendSummaryText(session: FinishedSessionData): string {
+    return (
       `Puntuación Final: ${session.final_score}\n` +
       `Nivel Alcanzado: ${session.max_level_reached}\n` +
       `Disparos Totales: ${session.total_shots}\n` +
       `Aciertos: ${session.correct_shots} | Errores: ${session.wrong_shots}\n` +
       `Precisión: ${session.accuracy}%\n` +
-      `Tiempo Jugado: ${formatClock(session.duration_seconds)}`,
-      {
-        fontSize: FONT_SIZE.title,
-        color: COLOR.white,
-        fontStyle: 'bold',
-        align: 'center',
-        lineSpacing: 10
-      }
+      `Tiempo Jugado: ${formatClock(session.duration_seconds)}`
     );
-    stats.setOrigin(0.5);
-    stats.setDepth(3001);
-
-    const restartText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY + 150,
-      'Haz clic para nueva sesión',
-      {
-        fontSize: FONT_SIZE.xxl,
-        color: COLOR.green,
-        fontStyle: 'italic'
-      }
-    );
-    restartText.setOrigin(0.5);
-    restartText.setDepth(3001);
-
-    this.tweens.add({
-      targets: restartText,
-      alpha: 0.3,
-      duration: 800,
-      ease: 'Sine.easeInOut',
-      yoyo: true,
-      repeat: -1
-    });
-
-    this.input.once('pointerdown', () => {
-      this.showRestartConfirmation(overlay, title, stats, restartText);
-    });
   }
 
-  private showRestartConfirmation(
-    _overlay: Phaser.GameObjects.Rectangle,
-    summaryText: Phaser.GameObjects.Text,
-    statsText: Phaser.GameObjects.Text,
-    restartText: Phaser.GameObjects.Text
-  ): void {
-    // Ocultar elementos anteriores
-    summaryText.destroy();
-    statsText.destroy();
-    restartText.destroy();
-
-    // Crear texto de confirmación
-    const confirmText = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY - 60,
-      '¿Seguro que deseas iniciar\nuna nueva sesión?',
-      {
-        fontSize: FONT_SIZE.display,
-        color: COLOR.yellow,
-        fontStyle: 'bold',
-        stroke: COLOR.black,
-        strokeThickness: 6,
-        align: 'center'
-      }
+  /** Resumen calculado en el cliente (cuando no hay datos del backend) */
+  private localSummaryText(): string {
+    const info = this.progressionManager.getProgressInfo();
+    return (
+      `Puntuación Final: ${this.scoreManager.getScore()}\n` +
+      `Nivel Alcanzado: ${info.level}\n` +
+      `Última Tabla: Tabla del ${info.table}\n` +
+      `Tiempo Jugado: ${formatClock(Math.floor(info.elapsedTime / 1000))}`
     );
-    confirmText.setOrigin(0.5);
-    confirmText.setDepth(3001);
-
-    const choiceStyle = (color: string, bg: string): ButtonStyle => ({
-      fontSize: FONT_SIZE.h1,
-      color,
-      bg,
-      padding: { x: 30, y: 15 },
-      depth: 3001,
-      hover: { scale: 1.1 },
-      extra: { fontStyle: 'bold', stroke: COLOR.black, strokeThickness: 4 },
-    });
-
-    // Botón SÍ - reiniciar
-    const yesButton = createButton(this, {
-      ...choiceStyle(COLOR.green, '#004400'),
-      x: this.cameras.main.centerX - 100,
-      y: this.cameras.main.centerY + 80,
-      text: 'SÍ',
-      onClick: () => this.scene.restart(),
-    });
-
-    // Botón NO - volver al resumen
-    const noButton = createButton(this, {
-      ...choiceStyle(COLOR.red, '#440000'),
-      x: this.cameras.main.centerX + 100,
-      y: this.cameras.main.centerY + 80,
-      text: 'NO',
-      onClick: () => {
-        confirmText.destroy();
-        yesButton.destroy();
-        noButton.destroy();
-
-        // Recrear pantalla de resumen en el fotograma siguiente: showSessionSummary() registra un
-        // input.once('pointerdown') y, si se hiciera aquí, este mismo click lo dispararía de inmediato
-        // y volvería a mostrar la confirmación.
-        this.time.delayedCall(0, () => this.showSessionSummary());
-      },
-    });
   }
 }

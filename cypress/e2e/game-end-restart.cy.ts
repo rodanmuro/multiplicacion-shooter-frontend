@@ -105,6 +105,26 @@ describe('Juego: fin de sesión y reinicio', () => {
         expectSceneText('GameScene', 'Score: 0');
       });
 
+      // Pendiente menor de la bitácora 015, resuelto en la etapa 6: antes cada NO añadía otra capa
+      // oscura (el fondo se oscurecía un poco más en cada ciclo).
+      it('alternar varias veces entre resumen y confirmación mantiene una sola capa oscura', () => {
+        const darkLayers = () =>
+          cy.window({ log: false }).then((win) =>
+            getScene(win, 'GameScene').children.list.filter(
+              (o: { type: string; depth: number }) => o.type === 'Rectangle' && o.depth === 3000
+            ).length
+          );
+
+        clickSceneText('GameScene', 'NO');
+        expectSceneText('GameScene', 'Haz clic para nueva sesión');
+        clickGame(300, 400);
+        expectSceneText('GameScene', '¿Seguro que deseas iniciar\nuna nueva sesión?');
+        clickSceneText('GameScene', 'NO');
+        expectSceneText('GameScene', 'Haz clic para nueva sesión');
+
+        darkLayers().should('equal', 1);
+      });
+
       it('SÍ reinicia: crea una sesión nueva y el puntaje vuelve a 0', () => {
         clickSceneText('GameScene', 'SÍ');
 
