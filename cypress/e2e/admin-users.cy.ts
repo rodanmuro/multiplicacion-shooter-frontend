@@ -432,10 +432,8 @@ describe('Panel de administración: lista de usuarios', () => {
       cy.get('#admin-filters').should('not.exist');
     });
 
-    // ERROR ACTUAL (bitácora 016): igual que en StatsScene, `shutdown()` nunca se registra como
-    // manejador del evento de la escena; la barra de filtros solo se retira con los botones de la
-    // propia escena. Al salir por el menú de usuario queda flotando. Al corregirlo, esperar 0.
-    it('(comportamiento actual) al salir por el menú de usuario la barra de filtros queda en el DOM', () => {
+    // Defecto 1 de la bitácora 016, corregido en la etapa 4 del refactor (evento SHUTDOWN de Phaser).
+    it('al salir por el menú de usuario se retira la barra de filtros', () => {
       openAdmin({ users: adminUsers(3) });
       stubStatsForNavigation();
       bar().should('exist');
@@ -443,7 +441,7 @@ describe('Panel de administración: lista de usuarios', () => {
       clickUserMenu('#stats-btn');
 
       waitForScene('StatsScene');
-      cy.get('#admin-filters').should('exist');
+      cy.get('#admin-filters').should('not.exist');
     });
   });
 

@@ -13,6 +13,7 @@ import { formatDate, formatTime } from '../utils/format';
 import { createButton, type ButtonStyle } from '../ui/widgets/Button';
 import { createModalFrame } from '../ui/widgets/Modal';
 import { createPagination } from '../ui/widgets/Pagination';
+import { FilterBar } from '../ui/html/FilterBar';
 
 /**
  * Escena de administración mejorada
@@ -44,13 +45,16 @@ export default class AdminScene extends Phaser.Scene {
   private sessionsFilters: AdminSessionsFilterParams = { page: 1 };
 
   // Elementos HTML para filtros
-  private filterContainer: HTMLDivElement | null = null;
+  private filterBar: FilterBar | null = null;
 
   constructor() {
     super({ key: 'AdminScene' });
   }
 
   create(): void {
+    // Phaser no invoca por nombre un método `shutdown()`: hay que suscribirse al evento
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.removeFilterContainer());
+
     const { width, height } = this.cameras.main;
     const centerX = width / 2;
 
@@ -194,38 +198,15 @@ export default class AdminScene extends Phaser.Scene {
    * Crea la barra de filtros para usuarios (HTML)
    */
   private createUsersFilterBar(): void {
-    this.filterContainer = document.createElement('div');
-    this.filterContainer.id = 'admin-filters';
-    this.filterContainer.style.cssText = `
-      position: absolute;
-      top: 85px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
-      background: rgba(26, 26, 46, 0.95);
-      padding: 8px 15px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      z-index: 10;
-      max-width: 95%;
-    `;
-
-    const inputStyle = this.getInputStyle();
+    const bar = new FilterBar('users', 'admin-filters');
+    this.filterBar = bar;
 
     // Label fecha
-    const dateLabel = document.createElement('span');
-    dateLabel.textContent = 'Desde:';
-    dateLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+    const dateLabel = bar.label('Desde:');
 
     // Input fecha desde
-    const dateFromInput = document.createElement('input');
-    dateFromInput.type = 'date';
+    const dateFromInput = bar.input('date', 'date');
     dateFromInput.value = this.usersFilters.date_from || `${new Date().getFullYear()}-01-01`;
-    dateFromInput.style.cssText = inputStyle + 'width: 130px;';
     dateFromInput.onchange = () => {
       this.usersFilters.date_from = dateFromInput.value || undefined;
       this.usersFilters.page = 1;
@@ -233,15 +214,11 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Label hasta
-    const toLabel = document.createElement('span');
-    toLabel.textContent = 'Hasta:';
-    toLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+    const toLabel = bar.label('Hasta:');
 
     // Input fecha hasta
-    const dateToInput = document.createElement('input');
-    dateToInput.type = 'date';
+    const dateToInput = bar.input('date', 'date');
     dateToInput.value = this.usersFilters.date_to || '';
-    dateToInput.style.cssText = inputStyle + 'width: 130px;';
     dateToInput.onchange = () => {
       this.usersFilters.date_to = dateToInput.value || undefined;
       this.usersFilters.page = 1;
@@ -249,17 +226,13 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Label min score
-    const minScoreLabel = document.createElement('span');
-    minScoreLabel.textContent = 'Mín pts:';
-    minScoreLabel.style.cssText = 'color: #aaa; font-size: 13px;';
+    const minScoreLabel = bar.label('Mín pts:');
 
     // Input puntaje mínimo
-    const minScoreInput = document.createElement('input');
-    minScoreInput.type = 'number';
+    const minScoreInput = bar.input('number', 'narrow');
     minScoreInput.min = '0';
     minScoreInput.step = '100';
     minScoreInput.value = String(this.usersFilters.min_score || 1000);
-    minScoreInput.style.cssText = inputStyle + 'width: 80px;';
     minScoreInput.onchange = () => {
       this.usersFilters.min_score = parseInt(minScoreInput.value) || 0;
       this.usersFilters.page = 1;
@@ -267,8 +240,7 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Select de grupo
-    const groupSelect = document.createElement('select');
-    groupSelect.style.cssText = this.getSelectStyle();
+    const groupSelect = bar.select();
     groupSelect.innerHTML = `<option value="">Todos los grupos</option>`;
     this.availableGroups.forEach((g) => {
       const opt = document.createElement('option');
@@ -284,8 +256,7 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Select de perfil
-    const profileSelect = document.createElement('select');
-    profileSelect.style.cssText = this.getSelectStyle();
+    const profileSelect = bar.select();
     profileSelect.innerHTML = `
       <option value="">Todos los perfiles</option>
       <option value="student">Estudiante</option>
@@ -300,11 +271,9 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Input de búsqueda
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
+    const searchInput = bar.input('text', 'wide');
     searchInput.placeholder = '🔍 Buscar...';
     searchInput.value = this.usersFilters.search || '';
-    searchInput.style.cssText = inputStyle + 'width: 150px;';
     let searchTimeout: number;
     searchInput.oninput = () => {
       clearTimeout(searchTimeout);
@@ -316,17 +285,7 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Botón limpiar filtros
-    const clearBtn = document.createElement('button');
-    clearBtn.textContent = '✕ Limpiar';
-    clearBtn.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: none;
-      background: #444;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-    `;
+    const clearBtn = bar.button('✕ Limpiar');
     clearBtn.onclick = () => {
       this.usersFilters = {
         page: 1,
@@ -347,18 +306,20 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Agregar elementos en orden
-    this.filterContainer.appendChild(dateLabel);
-    this.filterContainer.appendChild(dateFromInput);
-    this.filterContainer.appendChild(toLabel);
-    this.filterContainer.appendChild(dateToInput);
-    this.filterContainer.appendChild(minScoreLabel);
-    this.filterContainer.appendChild(minScoreInput);
-    this.filterContainer.appendChild(groupSelect);
-    this.filterContainer.appendChild(profileSelect);
-    this.filterContainer.appendChild(searchInput);
-    this.filterContainer.appendChild(clearBtn);
-
-    document.body.appendChild(this.filterContainer);
+    bar
+      .append(
+        dateLabel,
+        dateFromInput,
+        toLabel,
+        dateToInput,
+        minScoreLabel,
+        minScoreInput,
+        groupSelect,
+        profileSelect,
+        searchInput,
+        clearBtn
+      )
+      .mount();
   }
 
   /**
@@ -557,53 +518,21 @@ export default class AdminScene extends Phaser.Scene {
    * Crea la barra de filtros para sesiones (HTML)
    */
   private createSessionsFilterBar(): void {
-    this.filterContainer = document.createElement('div');
-    this.filterContainer.id = 'admin-filters';
-    this.filterContainer.style.cssText = `
-      position: absolute;
-      top: 175px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      background: rgba(26, 26, 46, 0.95);
-      padding: 10px 20px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      z-index: 1000;
-    `;
+    const bar = new FilterBar('sessions', 'admin-filters');
+    this.filterBar = bar;
 
-    // Label
-    const label = document.createElement('span');
-    label.textContent = 'Filtrar por fecha:';
-    label.style.color = '#aaa';
-    label.style.fontSize = '14px';
+    const label = bar.label('Filtrar por fecha:');
 
     // Input fecha desde
-    const dateFrom = document.createElement('input');
-    dateFrom.type = 'date';
+    const dateFrom = bar.input('date');
     dateFrom.value = this.sessionsFilters.date_from || '';
-    dateFrom.style.cssText = this.getInputStyle();
 
     // Input fecha hasta
-    const dateTo = document.createElement('input');
-    dateTo.type = 'date';
+    const dateTo = bar.input('date');
     dateTo.value = this.sessionsFilters.date_to || '';
-    dateTo.style.cssText = this.getInputStyle();
 
     // Botón aplicar
-    const applyBtn = document.createElement('button');
-    applyBtn.textContent = 'Aplicar';
-    applyBtn.style.cssText = `
-      padding: 8px 16px;
-      border-radius: 4px;
-      border: none;
-      background: #0066cc;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-    `;
+    const applyBtn = bar.button('Aplicar', true);
     applyBtn.onclick = () => {
       this.sessionsFilters.date_from = dateFrom.value || undefined;
       this.sessionsFilters.date_to = dateTo.value || undefined;
@@ -612,17 +541,7 @@ export default class AdminScene extends Phaser.Scene {
     };
 
     // Botón limpiar
-    const clearBtn = document.createElement('button');
-    clearBtn.textContent = '✕ Limpiar';
-    clearBtn.style.cssText = `
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: none;
-      background: #444;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-    `;
+    const clearBtn = bar.button('✕ Limpiar');
     clearBtn.onclick = () => {
       this.sessionsFilters = { page: 1 };
       dateFrom.value = '';
@@ -630,14 +549,9 @@ export default class AdminScene extends Phaser.Scene {
       this.reloadUserSessions();
     };
 
-    this.filterContainer.appendChild(label);
-    this.filterContainer.appendChild(dateFrom);
-    this.filterContainer.appendChild(document.createTextNode(' a '));
-    this.filterContainer.appendChild(dateTo);
-    this.filterContainer.appendChild(applyBtn);
-    this.filterContainer.appendChild(clearBtn);
-
-    document.body.appendChild(this.filterContainer);
+    bar
+      .append(label, dateFrom, document.createTextNode(' a '), dateTo, applyBtn, clearBtn)
+      .mount();
   }
 
   /**
@@ -863,39 +777,10 @@ export default class AdminScene extends Phaser.Scene {
    * Elimina el contenedor de filtros HTML
    */
   private removeFilterContainer(): void {
-    if (this.filterContainer) {
-      this.filterContainer.remove();
-      this.filterContainer = null;
+    if (this.filterBar) {
+      this.filterBar.destroy();
+      this.filterBar = null;
     }
-  }
-
-  /**
-   * Estilo para select
-   */
-  private getSelectStyle(): string {
-    return `
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 14px;
-      cursor: pointer;
-    `;
-  }
-
-  /**
-   * Estilo para input
-   */
-  private getInputStyle(): string {
-    return `
-      padding: 8px 12px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 14px;
-    `;
   }
 
   /**
@@ -997,12 +882,5 @@ export default class AdminScene extends Phaser.Scene {
       this.removeFilterContainer();
       this.scene.start('GameScene');
     });
-  }
-
-  /**
-   * Cleanup al salir de la escena
-   */
-  shutdown(): void {
-    this.removeFilterContainer();
   }
 }

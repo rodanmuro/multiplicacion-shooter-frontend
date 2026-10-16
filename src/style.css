@@ -207,3 +207,110 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* Barras de filtros HTML (Estadísticas y Panel de Administración)     */
+/* Se crean con src/ui/html/FilterBar.ts                               */
+/* ------------------------------------------------------------------ */
+.filter-bar {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  background: rgba(26, 26, 46, 0.95);
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.filter-bar--stats {
+  top: 70px;
+  gap: 10px;
+  padding: 8px 20px;
+  z-index: 10;
+}
+
+.filter-bar--users {
+  top: 85px;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 15px;
+  z-index: 10;
+  max-width: 95%;
+}
+
+.filter-bar--sessions {
+  top: 175px;
+  gap: 10px;
+  padding: 10px 20px;
+  z-index: 1000;
+}
+
+.filter-label {
+  color: #aaa;
+  font-size: 14px;
+}
+
+.filter-bar--users .filter-label {
+  font-size: 13px;
+}
+
+.filter-separator {
+  color: #555;
+  font-size: 14px;
+}
+
+.filter-total {
+  color: #4ecdc4;
+  font-size: 14px;
+}
+
+.filter-input,
+.filter-select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 14px;
+}
+
+.filter-select {
+  cursor: pointer;
+}
+
+.filter-bar--stats .filter-input {
+  padding: 6px 10px;
+}
+
+.filter-input--short {
+  width: 90px;
+}
+
+.filter-input--date {
+  width: 130px;
+}
+
+.filter-input--narrow {
+  width: 80px;
+}
+
+.filter-input--wide {
+  width: 150px;
+}
+
+.filter-btn {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  background: #444;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.filter-btn--primary {
+  padding: 8px 16px;
+  background: #0066cc;
+}

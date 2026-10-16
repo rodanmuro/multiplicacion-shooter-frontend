@@ -339,17 +339,26 @@ describe('Estadísticas del estudiante', () => {
       cy.window().should((win) => expect(statsFilterBars(win)).to.have.length(1));
     });
 
-    // ERROR ACTUAL (bitácora 016): `shutdown()` es un método de la clase, pero Phaser no lo invoca por
-    // nombre y la escena nunca lo registra en sus eventos. La barra de filtros HTML solo se retira
-    // desde "← Volver"; al salir por el menú de usuario queda flotando sobre la escena siguiente.
-    // Cuando se corrija, esta prueba debe esperar 0 barras.
-    it('(comportamiento actual) al salir por el menú de usuario la barra de filtros queda en el DOM', () => {
+    // Defecto 1 de la bitácora 016, corregido en la etapa 4 del refactor: la escena se suscribe al
+    // evento SHUTDOWN de Phaser (antes definía un método `shutdown()` que nadie invocaba).
+    it('al salir por el menú de usuario se retira la barra de filtros', () => {
       openStats({ sessions: listSessions(3) });
       filterBar().should('exist');
 
       clickUserMenu('#stats-btn');
 
-      cy.window().should((win) => expect(statsFilterBars(win).length).to.be.greaterThan(1));
+      cy.window().should((win) => expect(statsFilterBars(win)).to.have.length(1));
+      expectSceneText('StatsScene', 'HISTORIAL DE SESIONES');
+    });
+
+    it('entrar a Estadísticas desde Estadísticas no acumula barras', () => {
+      openStats({ sessions: listSessions(3) });
+      clickUserMenu('#stats-btn');
+      waitForScene('StatsScene');
+      clickUserMenu('#stats-btn');
+      waitForScene('StatsScene');
+
+      cy.window().should((win) => expect(statsFilterBars(win)).to.have.length(1));
     });
   });
 

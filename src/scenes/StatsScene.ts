@@ -6,6 +6,7 @@ import { formatDate, formatDateTime, formatDurationMMSS, formatTime } from '../u
 import { createButton } from '../ui/widgets/Button';
 import { createModalFrame } from '../ui/widgets/Modal';
 import { createPagination } from '../ui/widgets/Pagination';
+import { FilterBar } from '../ui/html/FilterBar';
 
 /**
  * Escena de estadísticas - Muestra historial de sesiones del usuario
@@ -17,7 +18,7 @@ export class StatsScene extends Phaser.Scene {
   private totalSessions: number = 0;
   private minScore: number = 1000;
   private dateFrom: string = `${new Date().getFullYear()}-01-01`;
-  private filterContainer: HTMLDivElement | null = null;
+  private filterBar: FilterBar | null = null;
   private totalSpan: HTMLSpanElement | null = null;
   private sessionsList!: Phaser.GameObjects.Container;
   private loadingText!: Phaser.GameObjects.Text;
@@ -28,6 +29,9 @@ export class StatsScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Phaser no invoca por nombre un método `shutdown()`: hay que suscribirse al evento
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanupHtmlElements());
+
     // Asegurar que el cursor sea visible
     this.input.setDefaultCursor('default');
 
@@ -115,40 +119,14 @@ export class StatsScene extends Phaser.Scene {
    * Crea la barra de filtros HTML
    */
   private createFilterBar(): void {
-    this.filterContainer = document.createElement('div');
-    this.filterContainer.style.cssText = `
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      background: rgba(26, 26, 46, 0.95);
-      padding: 8px 20px;
-      border-radius: 8px;
-      border: 1px solid #333;
-      z-index: 10;
-    `;
+    this.filterBar = new FilterBar('stats');
 
-    const label = document.createElement('span');
-    label.textContent = 'Mín pts:';
-    label.style.cssText = 'color: #aaa; font-size: 14px;';
+    const label = this.filterBar.label('Mín pts:');
 
-    const input = document.createElement('input');
-    input.type = 'number';
+    const input = this.filterBar.input('number', 'short');
     input.min = '0';
     input.step = '100';
     input.value = String(this.minScore);
-    input.style.cssText = `
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 14px;
-      width: 90px;
-    `;
     let timeout: number;
     input.oninput = () => {
       clearTimeout(timeout);
@@ -160,21 +138,10 @@ export class StatsScene extends Phaser.Scene {
       }, 500);
     };
 
-    const dateLabel = document.createElement('span');
-    dateLabel.textContent = 'Desde:';
-    dateLabel.style.cssText = 'color: #aaa; font-size: 14px;';
+    const dateLabel = this.filterBar.label('Desde:');
 
-    const dateInput = document.createElement('input');
-    dateInput.type = 'date';
+    const dateInput = this.filterBar.input('date');
     dateInput.value = this.dateFrom;
-    dateInput.style.cssText = `
-      padding: 6px 10px;
-      border-radius: 4px;
-      border: 1px solid #444;
-      background: #1a1a2e;
-      color: #fff;
-      font-size: 14px;
-    `;
     dateInput.onchange = () => {
       this.dateFrom = dateInput.value;
       this.currentPage = 1;
@@ -182,21 +149,13 @@ export class StatsScene extends Phaser.Scene {
       this.loadSessions();
     };
 
-    const separator = document.createElement('span');
-    separator.textContent = '|';
-    separator.style.cssText = 'color: #555; font-size: 14px;';
+    const separator = this.filterBar.separator('|');
 
-    this.totalSpan = document.createElement('span');
-    this.totalSpan.style.cssText = 'color: #4ecdc4; font-size: 14px;';
-    this.totalSpan.textContent = 'Total sesiones encontradas: —';
+    this.totalSpan = this.filterBar.total('Total sesiones encontradas: —');
 
-    this.filterContainer.appendChild(dateLabel);
-    this.filterContainer.appendChild(dateInput);
-    this.filterContainer.appendChild(label);
-    this.filterContainer.appendChild(input);
-    this.filterContainer.appendChild(separator);
-    this.filterContainer.appendChild(this.totalSpan);
-    document.body.appendChild(this.filterContainer);
+    this.filterBar
+      .append(dateLabel, dateInput, label, input, separator, this.totalSpan)
+      .mount();
   }
 
   /**
@@ -544,14 +503,10 @@ export class StatsScene extends Phaser.Scene {
     this.scene.start('GameScene');
   }
 
-  shutdown(): void {
-    this.cleanupHtmlElements();
-  }
-
   private cleanupHtmlElements(): void {
-    if (this.filterContainer) {
-      this.filterContainer.remove();
-      this.filterContainer = null;
+    if (this.filterBar) {
+      this.filterBar.destroy();
+      this.filterBar = null;
       this.totalSpan = null;
     }
   }
