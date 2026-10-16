@@ -10,6 +10,9 @@ import type {
 } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
 import { formatDate, formatTime } from '../utils/format';
+import { createButton, type ButtonStyle } from '../ui/widgets/Button';
+import { createModalFrame } from '../ui/widgets/Modal';
+import { createPagination } from '../ui/widgets/Pagination';
 
 /**
  * Escena de administración mejorada
@@ -795,24 +798,30 @@ export default class AdminScene extends Phaser.Scene {
   ): void {
     if (!pagination) return;
 
-    const currentPage = pagination.current_page;
-    const lastPage = pagination.last_page;
+    createPagination(this, {
+      centerX,
+      y,
+      currentPage: pagination.current_page,
+      lastPage: pagination.last_page,
+      onChange,
+      label: `Página ${pagination.current_page} de ${pagination.last_page}`,
+      buttonOffset: 150,
+      labelFontSize: FONT_SIZE.md,
+      button: this.buttonStyle(COLOR.grayDark),
+    }).forEach((control) => control.setData('clearable', true));
+  }
 
-    if (currentPage > 1) {
-      this.createButton(centerX - 150, y, '← Anterior', () => onChange(currentPage - 1), COLOR.grayDark);
-    }
-
-    this.add
-      .text(centerX, y, `Página ${currentPage} de ${lastPage}`, {
-        fontSize: FONT_SIZE.md,
-        color: COLOR.white,
-      })
-      .setOrigin(0.5)
-      .setData('clearable', true);
-
-    if (currentPage < lastPage) {
-      this.createButton(centerX + 150, y, 'Siguiente →', () => onChange(currentPage + 1), COLOR.grayDark);
-    }
+  /**
+   * Estilo común de los botones del panel
+   */
+  private buttonStyle(bg: string): ButtonStyle {
+    return {
+      fontSize: FONT_SIZE.sm,
+      bg,
+      padding: { x: 12, y: 8 },
+      origin: { x: 0, y: 0.5 },
+      hover: { alpha: 0.8 },
+    };
   }
 
   /**
@@ -825,22 +834,10 @@ export default class AdminScene extends Phaser.Scene {
     onClick: () => void,
     bgColor: string = COLOR.grayDark
   ): Phaser.GameObjects.Text {
-    const btn = this.add
-      .text(x, y, text, {
-        fontSize: FONT_SIZE.sm,
-        color: COLOR.white,
-        backgroundColor: bgColor,
-        padding: { x: 12, y: 8 },
-      })
-      .setOrigin(0, 0.5)
-      .setInteractive({ useHandCursor: true })
-      .setData('clearable', true);
-
-    btn.on('pointerdown', onClick);
-    btn.on('pointerover', () => btn.setAlpha(0.8));
-    btn.on('pointerout', () => btn.setAlpha(1));
-
-    return btn;
+    return createButton(this, { ...this.buttonStyle(bgColor), x, y, text, onClick }).setData(
+      'clearable',
+      true
+    );
   }
 
   /**
@@ -966,10 +963,16 @@ export default class AdminScene extends Phaser.Scene {
     const centerX = width / 2;
     const centerY = height / 2;
 
-    this.add
-      .rectangle(centerX, centerY, 500, 200, 0x000000, 0.95)
-      .setStrokeStyle(3, 0xff0000)
-      .setData('clearable', true);
+    createModalFrame(this, {
+      centerX,
+      centerY,
+      width: 500,
+      height: 200,
+      fill: 0x000000,
+      fillAlpha: 0.95,
+      strokeWidth: 3,
+      strokeColor: 0xff0000,
+    }).panel.setData('clearable', true);
 
     this.add
       .text(centerX, centerY - 40, 'ERROR', {

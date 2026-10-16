@@ -18,6 +18,7 @@ import { shotApiService } from '../services/shotApiService';
 import type { RecordShotPayload, FinishedSessionData } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
 import { formatClock } from '../utils/format';
+import { createButton, type ButtonStyle } from '../ui/widgets/Button';
 
 export class GameScene extends Phaser.Scene {
   private crosshair!: Crosshair;
@@ -551,75 +552,41 @@ export class GameScene extends Phaser.Scene {
     confirmText.setOrigin(0.5);
     confirmText.setDepth(3001);
 
-    // Botón SÍ
-    const yesButton = this.add.text(
-      this.cameras.main.centerX - 100,
-      this.cameras.main.centerY + 80,
-      'SÍ',
-      {
-        fontSize: FONT_SIZE.h1,
-        color: COLOR.green,
-        fontStyle: 'bold',
-        stroke: COLOR.black,
-        strokeThickness: 4,
-        backgroundColor: '#004400',
-        padding: { x: 30, y: 15 }
-      }
-    );
-    yesButton.setOrigin(0.5);
-    yesButton.setDepth(3001);
-    yesButton.setInteractive({ useHandCursor: true });
-
-    // Botón NO
-    const noButton = this.add.text(
-      this.cameras.main.centerX + 100,
-      this.cameras.main.centerY + 80,
-      'NO',
-      {
-        fontSize: FONT_SIZE.h1,
-        color: COLOR.red,
-        fontStyle: 'bold',
-        stroke: COLOR.black,
-        strokeThickness: 4,
-        backgroundColor: '#440000',
-        padding: { x: 30, y: 15 }
-      }
-    );
-    noButton.setOrigin(0.5);
-    noButton.setDepth(3001);
-    noButton.setInteractive({ useHandCursor: true });
-
-    // Hover effect en botón SÍ
-    yesButton.on('pointerover', () => {
-      yesButton.setScale(1.1);
-    });
-    yesButton.on('pointerout', () => {
-      yesButton.setScale(1);
+    const choiceStyle = (color: string, bg: string): ButtonStyle => ({
+      fontSize: FONT_SIZE.h1,
+      color,
+      bg,
+      padding: { x: 30, y: 15 },
+      depth: 3001,
+      hover: { scale: 1.1 },
+      extra: { fontStyle: 'bold', stroke: COLOR.black, strokeThickness: 4 },
     });
 
-    // Hover effect en botón NO
-    noButton.on('pointerover', () => {
-      noButton.setScale(1.1);
-    });
-    noButton.on('pointerout', () => {
-      noButton.setScale(1);
-    });
-
-    // Click en SÍ - reiniciar
-    yesButton.on('pointerdown', () => {
-      this.scene.restart();
+    // Botón SÍ - reiniciar
+    const yesButton = createButton(this, {
+      ...choiceStyle(COLOR.green, '#004400'),
+      x: this.cameras.main.centerX - 100,
+      y: this.cameras.main.centerY + 80,
+      text: 'SÍ',
+      onClick: () => this.scene.restart(),
     });
 
-    // Click en NO - volver al resumen
-    noButton.on('pointerdown', () => {
-      confirmText.destroy();
-      yesButton.destroy();
-      noButton.destroy();
+    // Botón NO - volver al resumen
+    const noButton = createButton(this, {
+      ...choiceStyle(COLOR.red, '#440000'),
+      x: this.cameras.main.centerX + 100,
+      y: this.cameras.main.centerY + 80,
+      text: 'NO',
+      onClick: () => {
+        confirmText.destroy();
+        yesButton.destroy();
+        noButton.destroy();
 
-      // Recrear pantalla de resumen en el fotograma siguiente: showSessionSummary() registra un
-      // input.once('pointerdown') y, si se hiciera aquí, este mismo click lo dispararía de inmediato
-      // y volvería a mostrar la confirmación.
-      this.time.delayedCall(0, () => this.showSessionSummary());
+        // Recrear pantalla de resumen en el fotograma siguiente: showSessionSummary() registra un
+        // input.once('pointerdown') y, si se hiciera aquí, este mismo click lo dispararía de inmediato
+        // y volvería a mostrar la confirmación.
+        this.time.delayedCall(0, () => this.showSessionSummary());
+      },
     });
   }
 }

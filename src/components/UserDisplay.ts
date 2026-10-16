@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import type { GoogleUser } from '../types/auth';
 import { AuthManager } from '../managers/AuthManager';
 import { FONT_SIZE, COLOR } from '../ui/theme';
+import { createButton } from '../ui/widgets/Button';
 
 /**
  * Muestra la información del usuario autenticado en la esquina superior derecha
@@ -55,22 +56,15 @@ export class UserDisplay {
     this.nameText.setOrigin(1, 0.5);
 
     // Crear botón de logout
-    this.logoutButton = this.scene.add.text(-60, 55, 'Salir', {
+    this.logoutButton = createButton(this.scene, {
+      x: -60,
+      y: 55,
+      text: 'Salir',
       fontSize: FONT_SIZE.xs,
-      color: COLOR.white,
-      backgroundColor: COLOR.dangerHover,
-      padding: { x: 8, y: 4 }
-    });
-    this.logoutButton.setOrigin(1, 0.5);
-    this.logoutButton.setInteractive({ useHandCursor: true });
-
-    // Efectos hover en el botón
-    this.logoutButton.on('pointerover', () => {
-      this.logoutButton.setStyle({ backgroundColor: COLOR.dangerHoverSoft });
-    });
-
-    this.logoutButton.on('pointerout', () => {
-      this.logoutButton.setStyle({ backgroundColor: COLOR.dangerHover });
+      bg: COLOR.dangerHover,
+      padding: { x: 8, y: 4 },
+      origin: { x: 1, y: 0.5 },
+      hover: { bg: COLOR.dangerHoverSoft },
     });
 
     // Acción de logout

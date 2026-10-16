@@ -3,6 +3,9 @@ import { sessionApiService } from '../services/sessionApiService';
 import type { SessionListItem, SessionDetail } from '../types/api';
 import { FONT_SIZE, COLOR } from '../ui/theme';
 import { formatDate, formatDateTime, formatDurationMMSS, formatTime } from '../utils/format';
+import { createButton } from '../ui/widgets/Button';
+import { createModalFrame } from '../ui/widgets/Modal';
+import { createPagination } from '../ui/widgets/Pagination';
 
 /**
  * Escena de estadísticas - Muestra historial de sesiones del usuario
@@ -48,22 +51,17 @@ export class StatsScene extends Phaser.Scene {
     title.setOrigin(0.5);
 
     // Botón de volver
-    const backButton = this.add.text(
-      50,
-      40,
-      '← Volver',
-      {
-        fontSize: FONT_SIZE.xl,
-        color: COLOR.white,
-        backgroundColor: COLOR.slateBtn,
-        padding: { x: 15, y: 10 }
-      }
-    );
-    backButton.setOrigin(0, 0.5);
-    backButton.setInteractive({ useHandCursor: true });
-    backButton.on('pointerdown', () => this.goBackToGame());
-    backButton.on('pointerover', () => backButton.setStyle({ backgroundColor: '#2d3748' }));
-    backButton.on('pointerout', () => backButton.setStyle({ backgroundColor: COLOR.slateBtn }));
+    createButton(this, {
+      x: 50,
+      y: 40,
+      text: '← Volver',
+      fontSize: FONT_SIZE.xl,
+      bg: COLOR.slateBtn,
+      padding: { x: 15, y: 10 },
+      origin: { x: 0, y: 0.5 },
+      hover: { bg: '#2d3748' },
+      onClick: () => this.goBackToGame(),
+    });
 
     // Texto de carga
     this.loadingText = this.add.text(
@@ -369,19 +367,15 @@ export class StatsScene extends Phaser.Scene {
     container.add(shotsText);
 
     // Botón ver detalle
-    const detailBtn = this.add.text(
-      centerX + 350,
+    const detailBtn = createButton(this, {
+      x: centerX + 350,
       y,
-      'Ver detalle',
-      {
-        fontSize: FONT_SIZE.sm,
-        color: COLOR.white,
-        backgroundColor: '#4299e1',
-        padding: { x: 10, y: 5 }
-      }
-    );
-    detailBtn.setOrigin(0, 0.5);
-    detailBtn.setInteractive({ useHandCursor: true });
+      text: 'Ver detalle',
+      fontSize: FONT_SIZE.sm,
+      bg: '#4299e1',
+      padding: { x: 10, y: 5 },
+      origin: { x: 0, y: 0.5 },
+    });
     container.add(detailBtn);
 
     // Eventos de hover
@@ -407,56 +401,22 @@ export class StatsScene extends Phaser.Scene {
     const y = this.cameras.main.height - 40;
     const centerX = this.cameras.main.centerX;
 
-    // Botón anterior
-    if (this.currentPage > 1) {
-      const prevBtn = this.add.text(
-        centerX - 100,
-        y,
-        '← Anterior',
-        {
-          fontSize: FONT_SIZE.lg,
-          color: COLOR.white,
-          backgroundColor: COLOR.slateBtn,
-          padding: { x: 15, y: 8 }
-        }
-      );
-      prevBtn.setOrigin(0.5);
-      prevBtn.setInteractive({ useHandCursor: true });
-      prevBtn.on('pointerdown', () => this.changePage(this.currentPage - 1));
-      this.sessionsList.add(prevBtn);
-    }
-
-    // Indicador de página
-    const pageText = this.add.text(
+    const controls = createPagination(this, {
       centerX,
       y,
-      `${this.currentPage} / ${this.totalPages}`,
-      {
+      currentPage: this.currentPage,
+      lastPage: this.totalPages,
+      onChange: (page) => this.changePage(page),
+      label: `${this.currentPage} / ${this.totalPages}`,
+      buttonOffset: 100,
+      labelFontSize: FONT_SIZE.lg,
+      button: {
         fontSize: FONT_SIZE.lg,
-        color: COLOR.white
-      }
-    );
-    pageText.setOrigin(0.5);
-    this.sessionsList.add(pageText);
-
-    // Botón siguiente
-    if (this.currentPage < this.totalPages) {
-      const nextBtn = this.add.text(
-        centerX + 100,
-        y,
-        'Siguiente →',
-        {
-          fontSize: FONT_SIZE.lg,
-          color: COLOR.white,
-          backgroundColor: COLOR.slateBtn,
-          padding: { x: 15, y: 8 }
-        }
-      );
-      nextBtn.setOrigin(0.5);
-      nextBtn.setInteractive({ useHandCursor: true });
-      nextBtn.on('pointerdown', () => this.changePage(this.currentPage + 1));
-      this.sessionsList.add(nextBtn);
-    }
+        bg: COLOR.slateBtn,
+        padding: { x: 15, y: 8 },
+      },
+    });
+    controls.forEach((control) => this.sessionsList.add(control));
   }
 
   /**
@@ -484,32 +444,20 @@ export class StatsScene extends Phaser.Scene {
    * Muestra modal con detalle completo de la sesión
    */
   private showDetailModal(detail: SessionDetail): void {
-    // Overlay oscuro
-    const overlay = this.add.rectangle(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      this.cameras.main.width,
-      this.cameras.main.height,
-      0x000000,
-      0.8
-    );
-    overlay.setInteractive();
-
-    // Modal container
+    const { backdrop, panel } = createModalFrame(this, {
+      centerX: this.cameras.main.centerX,
+      centerY: this.cameras.main.centerY,
+      width: 900,
+      height: 600,
+      fill: 0x1a1a2e,
+      fillAlpha: 1,
+      strokeWidth: 2,
+      strokeColor: 0xffff00,
+      backdrop: { width: this.cameras.main.width, height: this.cameras.main.height, alpha: 0.8 },
+    });
     this.detailModal = this.add.container(0, 0);
-    this.detailModal.add(overlay);
-
-    // Fondo del modal
-    const modalBg = this.add.rectangle(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      900,
-      600,
-      0x1a1a2e,
-      1
-    );
-    modalBg.setStrokeStyle(2, 0xffff00);
-    this.detailModal.add(modalBg);
+    this.detailModal.add(backdrop!);
+    this.detailModal.add(panel);
 
     // Título del modal
     const dateStr = formatDateTime(detail.session.started_at);
@@ -566,22 +514,16 @@ export class StatsScene extends Phaser.Scene {
     this.detailModal.add(shotsTitle);
 
     // Botón cerrar
-    const closeBtn = this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY + 250,
-      'Cerrar',
-      {
-        fontSize: FONT_SIZE.xl,
-        color: COLOR.white,
-        backgroundColor: COLOR.dangerBtn,
-        padding: { x: 30, y: 12 }
-      }
-    );
-    closeBtn.setOrigin(0.5);
-    closeBtn.setInteractive({ useHandCursor: true });
-    closeBtn.on('pointerdown', () => this.closeDetailModal());
-    closeBtn.on('pointerover', () => closeBtn.setStyle({ backgroundColor: '#c53030' }));
-    closeBtn.on('pointerout', () => closeBtn.setStyle({ backgroundColor: COLOR.dangerBtn }));
+    const closeBtn = createButton(this, {
+      x: this.cameras.main.centerX,
+      y: this.cameras.main.centerY + 250,
+      text: 'Cerrar',
+      fontSize: FONT_SIZE.xl,
+      bg: COLOR.dangerBtn,
+      padding: { x: 30, y: 12 },
+      hover: { bg: '#c53030' },
+      onClick: () => this.closeDetailModal(),
+    });
     this.detailModal.add(closeBtn);
   }
 
