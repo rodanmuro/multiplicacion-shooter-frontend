@@ -8,6 +8,7 @@ import {
   shootCard,
   visitApp,
   waitFrames,
+  worldWidth,
 } from '../support/gameDriver';
 
 const PHONE_LANDSCAPE: [number, number] = [844, 390];
@@ -24,8 +25,9 @@ function parkCardAtCenter() {
       scene.cardSpawner.stopSpawning();
       card.velocityX = 0;
       card.velocityY = 0;
-      card.setPosition(600, 400);
-      return { scale: card.scaleX as number, halfWidth: 60 * (card.scaleX as number), card };
+      const cx = worldWidth(win) / 2;
+      card.setPosition(cx, 400);
+      return { scale: card.scaleX as number, halfWidth: 60 * (card.scaleX as number), card, cx };
     });
 }
 
@@ -46,24 +48,25 @@ describe('Celular: jugabilidad táctil', () => {
       parkCardAtCenter().then(({ scale }) => {
         expect(scale, 'escala de la tarjeta').to.be.greaterThan(1.3);
         // Alto en pantalla ≥ 56 px (o el tope de 1,6×)
-        cy.get('canvas').then(($c) => {
-          const screenHeight = 80 * scale * ($c[0].getBoundingClientRect().width / 1200);
+        cy.window().then((win) => {
+          const canvasWidth = win.document.querySelector('canvas')!.getBoundingClientRect().width;
+          const screenHeight = 80 * scale * (canvasWidth / worldWidth(win));
           expect(screenHeight, 'alto de la tarjeta en pantalla').to.be.at.least(50);
         });
       });
     });
 
     it('un toque un poco fuera del borde de la tarjeta la acierta (tolerancia del dedo)', () => {
-      parkCardAtCenter().then(({ halfWidth, card }) => {
+      parkCardAtCenter().then(({ halfWidth, card, cx }) => {
         // 8 px del mundo (≈ 4 px en pantalla) fuera del borde horizontal
-        clickGame(600 + halfWidth + 8, 400);
+        clickGame(cx + halfWidth + 8, 400);
         cy.window().should(() => expect(card.active, 'la tarjeta fue golpeada').to.equal(false));
       });
     });
 
     it('un toque muy lejos de la tarjeta no la acierta', () => {
-      parkCardAtCenter().then(({ halfWidth, card }) => {
-        clickGame(600 + halfWidth + 120, 400);
+      parkCardAtCenter().then(({ halfWidth, card, cx }) => {
+        clickGame(cx + halfWidth + 120, 400);
         waitFrames(3);
         cy.window().should(() => expect(card.active, 'la tarjeta sigue en pantalla').to.equal(true));
       });
@@ -121,8 +124,8 @@ describe('Celular: jugabilidad táctil', () => {
     });
 
     it('el impacto sigue siendo exacto: un toque fuera del borde no acierta', () => {
-      parkCardAtCenter().then(({ halfWidth, card }) => {
-        clickGame(600 + halfWidth + 8, 400);
+      parkCardAtCenter().then(({ halfWidth, card, cx }) => {
+        clickGame(cx + halfWidth + 8, 400);
         waitFrames(3);
         cy.window().should(() => expect(card.active, 'la tarjeta sigue en pantalla').to.equal(true));
       });

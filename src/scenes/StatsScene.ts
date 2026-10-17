@@ -192,18 +192,20 @@ export class StatsScene extends Phaser.Scene {
     // En pantallas reducidas: texto más grande, menos columnas y filas más juntas (caben las mismas 9)
     const layout = getLayout(this);
     const compact = layout.compact;
+    // Con un mundo más ancho que 1200 (pantalla alargada) la tabla compacta se ensancha para aprovecharlo
+    const spread = compact ? Math.min(1.6, Math.max(1, (this.cameras.main.width - 120) / 1000)) : 1;
 
     createDataTable<SessionListItem>(this, {
       centerX: this.cameras.main.centerX,
-      columns: compact ? this.compactSessionColumns() : this.sessionColumns(),
+      columns: compact ? this.compactSessionColumns(spread) : this.sessionColumns(),
       rows: this.sessions,
       maxRows: 9,
-      header: { y: compact ? 150 : 110, width: 1000, fontSize: FONT_SIZE.sm },
+      header: { y: compact ? 150 : 110, width: 1000 * spread, fontSize: FONT_SIZE.sm },
       textScale: layout.hudScale,
       firstRowY: compact ? 200 : 160,
       rowSpacing: compact ? 58 : 68,
       rowBackground: {
-        width: 1000,
+        width: 1000 * spread,
         height: compact ? 52 : 60,
         fill: 0x2d3748,
         alpha: 0.8,
@@ -223,8 +225,8 @@ export class StatsScene extends Phaser.Scene {
   /**
    * Columnas de la lista de sesiones en pantallas reducidas: sin "Disparos" y con la fecha corta
    */
-  private compactSessionColumns(): TableColumn<SessionListItem>[] {
-    return [
+  private compactSessionColumns(spread: number): TableColumn<SessionListItem>[] {
+    const columns: TableColumn<SessionListItem>[] = [
       {
         header: 'Fecha y Hora',
         headerX: -480,
@@ -276,6 +278,8 @@ export class StatsScene extends Phaser.Scene {
           }),
       },
     ];
+    // Las posiciones se reparten en proporción al ancho de la tabla
+    return columns.map((c) => ({ ...c, x: c.x * spread, headerX: c.headerX * spread }));
   }
 
   /**

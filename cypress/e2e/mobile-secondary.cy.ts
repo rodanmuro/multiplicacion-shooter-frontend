@@ -13,6 +13,7 @@ import {
   statsFilterBars,
   visitApp,
   waitForScene,
+  worldWidth,
 } from '../support/gameDriver';
 
 const PHONE_LANDSCAPE: [number, number] = [844, 390];
@@ -110,18 +111,16 @@ describe('Celular: pantallas secundarias', () => {
       clickGame(300, 400);
       expectSceneText('GameScene', '¿Seguro que deseas iniciar\nuna nueva sesión?');
 
-      cy.get('canvas').then(($canvas) => {
-        const scale = $canvas[0].getBoundingClientRect().width / 1200;
-        cy.window().then((win) => {
-          for (const label of ['SÍ', 'NO']) {
-            const b = boundsOf(win, label);
-            expect(b.width * scale, `ancho de ${label} en pantalla`).to.be.at.least(48);
-            expect(b.height * scale, `alto de ${label} en pantalla`).to.be.at.least(48);
-          }
-          const yes = boundsOf(win, 'SÍ');
-          const no = boundsOf(win, 'NO');
-          expect(no.left - yes.right, 'separación entre botones').to.be.greaterThan(20);
-        });
+      cy.window().then((win) => {
+        const scale = win.document.querySelector('canvas')!.getBoundingClientRect().width / worldWidth(win);
+        for (const label of ['SÍ', 'NO']) {
+          const b = boundsOf(win, label);
+          expect(b.width * scale, `ancho de ${label} en pantalla`).to.be.at.least(48);
+          expect(b.height * scale, `alto de ${label} en pantalla`).to.be.at.least(48);
+        }
+        const yes = boundsOf(win, 'SÍ');
+        const no = boundsOf(win, 'NO');
+        expect(no.left - yes.right, 'separación entre botones').to.be.greaterThan(20);
       });
     });
 
@@ -163,7 +162,7 @@ describe('Celular: pantallas secundarias', () => {
     /** Rectángulo del canvas y escala a la que se muestra */
     function canvasRect(win: Window) {
       const r = win.document.querySelector('canvas')!.getBoundingClientRect();
-      return { top: r.top, left: r.left, width: r.width, centerX: r.left + r.width / 2, scale: r.width / 1200 };
+      return { top: r.top, left: r.left, width: r.width, centerX: r.left + r.width / 2, scale: r.width / worldWidth(win) };
     }
 
     describe('en celular horizontal', () => {
@@ -187,7 +186,9 @@ describe('Celular: pantallas secundarias', () => {
           for (let i = 1; i < boxes.length; i++) {
             expect(boxes[i - 1].right, `columna ${i} termina antes de la siguiente`).to.be.at.most(boxes[i].left);
           }
-          expect(boxes[boxes.length - 1].right, 'dentro de la fila (1000 de ancho)').to.be.at.most(1100);
+          // La tabla compacta se ensancha con el mundo: 1000 de ancho a 1200, hasta 1,6 veces más
+          const spread = Math.min(1.6, Math.max(1, (worldWidth(win) - 120) / 1000));
+          expect(boxes[boxes.length - 1].right, 'dentro de la fila').to.be.at.most(worldWidth(win) / 2 + 500 * spread);
           const lowest = Math.max(...statsTexts(win).filter((t) => t.text !== '').map((t) => t.getBounds().bottom));
           expect(lowest, 'nada sale por abajo').to.be.at.most(800);
         });
@@ -218,7 +219,7 @@ describe('Celular: pantallas secundarias', () => {
       });
 
       it('el detalle oculta la barra de filtros HTML mientras está abierto y la devuelve al cerrar', () => {
-        clickGame(600, 200);
+        cy.window({ log: false }).then((win) => clickGame(worldWidth(win) / 2, 200));
         expectSceneText('StatsScene', 'Cerrar');
         cy.window().then((win) => {
           expect((statsFilterBars(win)[0] as HTMLElement).style.visibility).to.equal('hidden');

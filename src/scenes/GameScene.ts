@@ -53,18 +53,6 @@ export class GameScene extends Phaser.Scene {
     // Crear sesión en el backend (sin bloquear la inicialización)
     this.createGameSession();
 
-    // Texto temporal para verificar que la escena funciona
-    this.add.text(
-      this.cameras.main.centerX,
-      this.cameras.main.centerY,
-      'Multiplication Shooter\nGame Scene Active',
-      {
-        fontSize: FONT_SIZE.title,
-        color: COLOR.white,
-        align: 'center'
-      }
-    ).setOrigin(0.5);
-
     // Ocultar el cursor del sistema
     this.input.setDefaultCursor('none');
 

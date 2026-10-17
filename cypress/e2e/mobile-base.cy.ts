@@ -1,5 +1,5 @@
 import { stubEmptyHistory, stubGameApi } from '../support/api';
-import { clickUserMenu, gameScene, visitApp, waitForScene } from '../support/gameDriver';
+import { clickUserMenu, gameScene, visitApp, waitForScene, worldWidth } from '../support/gameDriver';
 
 /** Teléfono en horizontal (≈ iPhone 12) y en vertical */
 const PHONE_LANDSCAPE: [number, number] = [844, 390];
@@ -11,7 +11,7 @@ describe('Celular: base responsiva', () => {
       cy.viewport(...PHONE_LANDSCAPE);
     });
 
-    it('el lienzo cabe en la pantalla, centrado y con la proporción 3:2', () => {
+    it('el mundo se ensancha a la proporción de la pantalla y el lienzo la llena', () => {
       stubGameApi();
       visitApp({ authenticated: true });
       gameScene();
@@ -20,7 +20,9 @@ describe('Celular: base responsiva', () => {
         const r = $canvas[0].getBoundingClientRect();
         expect(r.width, 'ancho').to.be.at.most(PHONE_LANDSCAPE[0] + 0.5);
         expect(r.height, 'alto').to.be.at.most(PHONE_LANDSCAPE[1] + 0.5);
-        expect(r.width / r.height, 'proporción').to.be.closeTo(1.5, 0.01);
+        // La proporción del lienzo es la de la pantalla (≈ 2,16), no 3:2: ya no quedan franjas laterales
+        expect(r.width / r.height, 'proporción').to.be.closeTo(PHONE_LANDSCAPE[0] / PHONE_LANDSCAPE[1], 0.05);
+        expect(r.width, 'llena el ancho').to.be.closeTo(PHONE_LANDSCAPE[0], 6);
         // Centrado
         expect(Math.abs(r.left + r.width / 2 - PHONE_LANDSCAPE[0] / 2), 'centro x').to.be.lessThan(1);
         expect(Math.abs(r.top + r.height / 2 - PHONE_LANDSCAPE[1] / 2), 'centro y').to.be.lessThan(1);
@@ -45,6 +47,12 @@ describe('Celular: base responsiva', () => {
       stubGameApi();
       visitApp({ authenticated: true });
       gameScene();
+
+      cy.window().then((win) => {
+        const w = worldWidth(win);
+        expect(w, 'ancho del mundo').to.be.within(1700, 1800);
+        expect(w % 2, 'par').to.equal(0);
+      });
 
       cy.get('canvas').should('have.css', 'touch-action', 'none');
       cy.get('body').should('have.css', 'overscroll-behavior-y', 'none');
@@ -76,13 +84,14 @@ describe('Celular: base responsiva', () => {
       visitApp({ authenticated: false, googleStub: true });
       cy.get('#google-signin-button').should('exist');
 
-      cy.get('canvas').then(($canvas) => {
-        const c = $canvas[0].getBoundingClientRect();
-        const scale = c.width / 1200;
+      cy.window().then((win) => {
+        const world = worldWidth(win);
+        const c = win.document.querySelector('canvas')!.getBoundingClientRect();
+        const scale = c.width / world;
         cy.get('#google-signin-button').then(($b) => {
           const b = $b[0].getBoundingClientRect();
-          // Centro del botón de Phaser: (600, 480) del mundo
-          expect(b.left + b.width / 2, 'centro x').to.be.closeTo(c.left + 600 * scale, 2);
+          // Centro del botón de Phaser: (mitad del ancho del mundo, 480)
+          expect(b.left + b.width / 2, 'centro x').to.be.closeTo(c.left + (world / 2) * scale, 2);
           expect(b.top + b.height / 2, 'centro y').to.be.closeTo(c.top + 480 * scale, 2);
         });
       });
@@ -93,7 +102,7 @@ describe('Celular: base responsiva', () => {
       visitApp({ authenticated: true });
       gameScene();
 
-      // El mundo es 1200x800 aunque se muestre a ~0,49: Phaser traduce el toque
+      // El mundo es ≈ 1730x800 aunque se muestre a ~0,49: Phaser traduce el toque
       cy.get('canvas').then(($canvas) => {
         const r = $canvas[0].getBoundingClientRect();
         cy.wrap($canvas).trigger('mousemove', r.width / 2, r.height / 2, { force: true });
@@ -101,7 +110,7 @@ describe('Celular: base responsiva', () => {
       cy.window().should((win) => {
         const pointer = (win as unknown as { game: { input: { activePointer: { worldX: number; worldY: number } } } })
           .game.input.activePointer;
-        expect(pointer.worldX, 'x del mundo').to.be.closeTo(600, 3);
+        expect(pointer.worldX, 'x del mundo').to.be.closeTo(worldWidth(win) / 2, 3);
         expect(pointer.worldY, 'y del mundo').to.be.closeTo(400, 3);
       });
     });
